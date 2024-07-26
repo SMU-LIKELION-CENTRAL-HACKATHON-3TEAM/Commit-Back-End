@@ -17,11 +17,12 @@ import java.util.NoSuchElementException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class UserService {
     private final UserRepository userRepository;
 //    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    @Transactional
     public long createUser(CreateUserRequestDto createUserRequestDto){
         User user = createUserRequestDto.toEntity(/*passwordEncoder*/);
         userRepository.save(user);
@@ -29,6 +30,7 @@ public class UserService {
         return user.getId();
     }
 
+    @Transactional
     public void updatePassword(String email, UpdatePasswordRequestDto updatePasswordRequestDto){
         User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
         user.setPassword(updatePasswordRequestDto.getNewPassword());
@@ -41,12 +43,12 @@ public class UserService {
 //        }
     }
 
+    @Transactional
     public void deleteUser(String email){
         User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
         userRepository.deleteById(user.getId());
     }
 
-    @Transactional(readOnly = true)
     public UserResponseDto getUser(String email){
         User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
         return UserResponseDto.from(user);
