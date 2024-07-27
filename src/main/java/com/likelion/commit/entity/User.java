@@ -26,6 +26,10 @@ public class User {
     private String email;
 
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "ruleSetId", referencedColumnName = "id")
+    private RuleSet ruleSet;
+
 
     // 기타 맵핑 부분 추가
 
