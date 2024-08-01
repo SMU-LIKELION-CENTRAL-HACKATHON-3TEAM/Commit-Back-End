@@ -1,18 +1,18 @@
 package com.likelion.commit.service;
 
 
-import com.likelion.commit.dto.CreateUserRequestDto;
-import com.likelion.commit.dto.UpdatePasswordRequestDto;
-import com.likelion.commit.dto.UserResponseDto;
+import com.likelion.commit.dto.request.CreateUserRequestDto;
+import com.likelion.commit.dto.request.UpdatePasswordRequestDto;
+import com.likelion.commit.dto.response.UserResponseDto;
 import com.likelion.commit.entity.User;
+import com.likelion.commit.gloabal.exception.CustomException;
+import com.likelion.commit.gloabal.response.ErrorCode;
+import com.likelion.commit.repository.FixedPlanRepository;
 import com.likelion.commit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.security.InvalidParameterException;
-import java.util.NoSuchElementException;
 
 @Slf4j
 @Service
@@ -20,19 +20,23 @@ import java.util.NoSuchElementException;
 @Transactional(readOnly = true)
 public class UserService {
     private final UserRepository userRepository;
+    private final FixedPlanRepository fixedPlanRepository;
 //    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    private final PlanService planService;
+
 
     @Transactional
     public long createUser(CreateUserRequestDto createUserRequestDto){
         User user = createUserRequestDto.toEntity(/*passwordEncoder*/);
         userRepository.save(user);
-
+        planService.createDefaultFixedPlans(user);
         return user.getId();
     }
 
     @Transactional
     public void updatePassword(String email, UpdatePasswordRequestDto updatePasswordRequestDto){
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
         user.setPassword(updatePasswordRequestDto.getNewPassword());
 
 //        if(passwordEncoder.matches(user.getPassword(), updatePasswordRequestDto.getCurrentPassword())) {
@@ -45,12 +49,12 @@ public class UserService {
 
     @Transactional
     public void deleteUser(String email){
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
         userRepository.deleteById(user.getId());
     }
 
     public UserResponseDto getUser(String email){
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
         return UserResponseDto.from(user);
     }
 }

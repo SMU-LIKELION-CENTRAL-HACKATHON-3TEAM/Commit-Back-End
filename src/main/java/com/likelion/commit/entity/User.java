@@ -4,6 +4,8 @@ package com.likelion.commit.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -31,6 +33,11 @@ public class User {
     private RuleSet ruleSet;
 
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Plan> plans;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FixedPlan> fixedPlans;
     // 기타 맵핑 부분 추가
 
 }

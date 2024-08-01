@@ -1,9 +1,9 @@
 package com.likelion.commit.service;
 
 
-import com.likelion.commit.dto.CreateRuleSetRequestDto;
-import com.likelion.commit.dto.RuleSetResponseDto;
-import com.likelion.commit.dto.UpdateRuleSetRequestDto;
+import com.likelion.commit.dto.request.CreateRuleSetRequestDto;
+import com.likelion.commit.dto.response.RuleSetResponseDto;
+import com.likelion.commit.dto.request.UpdateRuleSetRequestDto;
 import com.likelion.commit.entity.RuleSet;
 import com.likelion.commit.entity.User;
 import com.likelion.commit.repository.RuleSetRepository;
