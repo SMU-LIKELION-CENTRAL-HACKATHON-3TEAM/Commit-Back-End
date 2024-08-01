@@ -5,12 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 public class PlanTimeRequestDto {
-    public LocalDateTime startTime;
-    public LocalDateTime endTime;
+    public LocalTime startTime;
+    public LocalTime endTime;
 
 }

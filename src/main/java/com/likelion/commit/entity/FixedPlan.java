@@ -1,6 +1,7 @@
 package com.likelion.commit.entity;
 
 
+import com.likelion.commit.dto.response.TimeTableResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -33,4 +34,5 @@ public class FixedPlan {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId")
     private User user;
+
 }

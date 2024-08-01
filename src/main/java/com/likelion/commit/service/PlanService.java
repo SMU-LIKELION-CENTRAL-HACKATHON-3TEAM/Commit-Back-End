@@ -4,12 +4,12 @@ package com.likelion.commit.service;
 import com.likelion.commit.dto.request.*;
 import com.likelion.commit.dto.response.PlanResponseDto;
 import com.likelion.commit.dto.response.TimeTableResponseDto;
-import com.likelion.commit.entity.FixedPlan;
-import com.likelion.commit.entity.Plan;
-import com.likelion.commit.entity.PlanStatus;
-import com.likelion.commit.entity.User;
+import com.likelion.commit.entity.*;
+import com.likelion.commit.gloabal.exception.CustomException;
+import com.likelion.commit.gloabal.response.ErrorCode;
 import com.likelion.commit.repository.FixedPlanRepository;
 import com.likelion.commit.repository.PlanRepository;
+import com.likelion.commit.repository.TimeTableRepository;
 import com.likelion.commit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +34,8 @@ public class PlanService {
     private final PlanRepository planRepository;
     private final UserRepository userRepository;
     private final FixedPlanRepository fixedPlanRepository;
+
+    private final TimeTableRepository timeTableRepository;
 
 
     public void createDefaultFixedPlans(User user) {
@@ -126,7 +128,20 @@ public class PlanService {
             plan.setEndTime(planTimeRequestDto.endTime);
             plan.setStatus(PlanStatus.COMPLETE);
             plan.setComplete(true);
-        }
+
+            //TODO : 이미 TimeTable에 들어가 있는 경우 -> Exception
+
+            timeTableRepository.save(TimeTable.builder()
+                    .planId(plan.getId())
+                    .date(plan.getDate())
+                    .startTime(plan.getStartTime())
+                    .endTime(plan.getEndTime())
+                    .priority(plan.getPriority())
+                    .content(plan.getContent())
+                    .isFixed(false)
+                    .build()
+            );
+        } else throw new CustomException(ErrorCode.UNAUTHORIZED_401);
     }
 
     @Transactional
@@ -229,70 +244,52 @@ public class PlanService {
 
 
     @Transactional
-    public List<TimeTableResponseDto> getTimeTable(String email, PlanDateRequestDto planDateRequestDto) {
+    public TimeTableResponseDto getTimeTable(String email, PlanDateRequestDto planDateRequestDto) {
         LocalDate date = planDateRequestDto.getDate();
 
         // 사용자 조회
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
 
-        // FixedPlan 조회
-        List<FixedPlan> fixedPlans = fixedPlanRepository.findByDateAndUser_Email(date, email);
 
+        List<TimeTable> timeTables = timeTableRepository.findByUser_IdAndDate(user.getId(), date);
 
-        // 로그 추가
-        System.out.println("FixedPlans: " + fixedPlans);
+        if (timeTables.isEmpty()) {
+            //미래인 경우
+            // 저장된 Time Table이 없는 경우
+            return TimeTableResponseDto.builder()
+                    .fixedPlans(fixedPlanRepository.findByDateAndUser_Email(date, email)
+                            .stream()
+                            .map(TimeTableResponseDto.TimeTableResponse::from)
+                            .toList())
+                    .build();
+        } else {
+            // 지난 날 또는 오늘인 경우
+            // 저장된 Time Table이 있는 경우
+            List<TimeTableResponseDto.TimeTableResponse> fixedPlans = timeTables.stream()
+                    .filter(TimeTable::isFixed)
+                    .map(TimeTableResponseDto.TimeTableResponse::from)
+                    .toList();
 
-        // 모든 Plan을 조회
-        List<Plan> plans = planRepository.findByDateAndUser_Email(date, email);
+            List<TimeTableResponseDto.TimeTableResponse> plans = timeTables.stream()
+                    .filter(timeTable -> !timeTable.isFixed())
+                    .map(TimeTableResponseDto.TimeTableResponse::from)
+                    .toList();
 
-        // 로그 추가
-        System.out.println("Plans: " + plans);
+            //fixedPlans 가 없는 경우 = plans만 있는 경우
+            if (fixedPlans.isEmpty()) {
+                fixedPlans = fixedPlanRepository.findByDateAndUser_Email(date, email)
+                        .stream()
+                        .map(TimeTableResponseDto.TimeTableResponse::from)
+                        .toList();
+            }
+            return TimeTableResponseDto.builder()
+                    .fixedPlans(fixedPlans)
+                    .plans(plans)
+                    .build();
+        }
 
-        // 요일을 판단하여 주말인지 평일인지 결정합니다.
-        boolean isWeekend = date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY;
-
-        // FixedPlan을 필터링하고 DTO로 변환합니다.
-        List<TimeTableResponseDto> fixedPlanDtos = fixedPlans.stream()
-                .filter(fp -> fp.isWeekend() == isWeekend)
-                .map(fp -> TimeTableResponseDto.builder()
-                        .fixedPlanId(fp.getId())
-                        .startTime(fp.getStartTime())
-                        .endTime(fp.getEndTime())
-                        .isWeekend(fp.isWeekend())
-                        .content(fp.getContent())
-                        .userId(fp.getUser().getId())
-                        .isFixed(true)
-                        .priority(0)
-                        .build())
-                .collect(Collectors.toList());
-
-        // Plan을 필터링하고 DTO로 변환합니다.
-        List<TimeTableResponseDto> planDtos = plans.stream()
-                .filter(p -> p.getStatus() == PlanStatus.COMPLETE && p.getStartTime() != null && p.getEndTime() != null)
-                .map(p -> TimeTableResponseDto.builder()
-                        .planId(p.getId())
-                        .startTime(p.getStartTime())
-                        .endTime(p.getEndTime())
-                        .isWeekend(false)
-                        .content(p.getContent())
-                        .userId(p.getUser().getId())
-                        .isFixed(false)
-                        .priority(p.getPriority())
-                        .build())
-                .collect(Collectors.toList());
-
-        // 두 리스트를 결합합니다.
-        List<TimeTableResponseDto> allDtos = new ArrayList<>();
-        allDtos.addAll(fixedPlanDtos);
-        allDtos.addAll(planDtos);
-
-        // 시작 시간 기준으로 정렬합니다.
-        return allDtos.stream()
-                .sorted(Comparator.comparing(TimeTableResponseDto::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())))
-                .collect(Collectors.toList());
     }
-
 
 
 
