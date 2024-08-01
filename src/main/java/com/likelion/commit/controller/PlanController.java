@@ -2,16 +2,21 @@ package com.likelion.commit.controller;
 
 
 import com.likelion.commit.dto.request.*;
+import com.likelion.commit.dto.response.DiaryResponseDto;
 import com.likelion.commit.dto.response.PlanResponseDto;
 import com.likelion.commit.dto.response.TimeTableResponseDto;
+import com.likelion.commit.dto.response.UserResponseDto;
+import com.likelion.commit.entity.Plan;
 import com.likelion.commit.gloabal.response.ApiResponse;
 import com.likelion.commit.gloabal.response.ErrorCode;
+import com.likelion.commit.service.DiaryService;
 import com.likelion.commit.service.PlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -22,6 +27,7 @@ import java.util.NoSuchElementException;
 public class PlanController {
 
     private final PlanService planService;
+    private final DiaryService diaryService;
 
     @PostMapping("/create")
     public ApiResponse<List<PlanResponseDto>> createPlans(@RequestParam String email,
@@ -118,19 +124,19 @@ public class PlanController {
         }
     }
 
-//    @PutMapping("/timetable/time/{fixedPlanId}")
-//    public ApiResponse<String> updateFixedTime(@RequestParam String email, @PathVariable Long fixedPlanId,
-//                                               @RequestBody PlanTimeRequestDto planTimeRequestDto) {
-//        try {
-//            planService.updateFixedTime(email, fixedPlanId, planTimeRequestDto);
-//            return ApiResponse.onSuccess(HttpStatus.OK, "일정의 시간을 수정했습니다.");
-//        } catch (NoSuchElementException e) {
-//            return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
-//        } catch (Exception e) {
-//            log.error("Error updating fixed time: ", e);
-//            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
-//        }
-//    }
+    @PutMapping("/timetable/time/{fixedPlanId}")
+    public ApiResponse<String> updateFixedTime(@RequestParam String email, @PathVariable Long fixedPlanId,
+                                               @RequestBody PlanTimeRequestDto planTimeRequestDto) {
+        try {
+            planService.updateFixedTime(email, fixedPlanId, planTimeRequestDto);
+            return ApiResponse.onSuccess(HttpStatus.OK, "일정의 시간을 수정했습니다.");
+        } catch (NoSuchElementException e) {
+            return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
+        } catch (Exception e) {
+            log.error("Error updating fixed time: ", e);
+            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
+        }
+    }
 
     @GetMapping("/date")
     public ApiResponse<List<PlanResponseDto>> getPlan(@RequestParam String email, @RequestBody PlanDateRequestDto planDateRequestDto) {
@@ -144,9 +150,9 @@ public class PlanController {
     }
 
     @GetMapping("/timetable")
-    public ApiResponse<List<TimeTableResponseDto>> getTimeTable(@RequestParam String email, @RequestBody PlanDateRequestDto planDateRequestDto) {
+    public ApiResponse<TimeTableResponseDto> getTimeTable(@RequestParam String email, @RequestBody PlanDateRequestDto planDateRequestDto) {
         try {
-            List<TimeTableResponseDto> timeTable = planService.getTimeTable(email, planDateRequestDto);
+            TimeTableResponseDto timeTable = planService.getTimeTable(email, planDateRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, timeTable);
         } catch (Exception e) {
             log.error("Error retrieving timetable: ", e);
@@ -177,5 +183,37 @@ public class PlanController {
             return ApiResponse.onFailure(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()), "서버에서 오류가 발생했습니다.");
         }
     }
+
+
+    @PostMapping("finish")
+    public ApiResponse<String> finish(@RequestParam String email,
+                                      @RequestBody FinishRequestDto finishRequestDto){
+        Long diaryId = planService.finish(email, finishRequestDto);
+        return ApiResponse.onSuccess(HttpStatus.OK, "하루 마무리하기를 완료했습니다. diaryId :" + diaryId);
+    }
+
+    @GetMapping("/diary")
+    public ApiResponse<DiaryResponseDto> getDiary(@RequestParam String email,
+                                                  @RequestBody DiaryDateRequestDto diaryDateRequestDto){
+        try {
+            DiaryResponseDto diaryResponseDto = diaryService.getDiary(email, diaryDateRequestDto);
+            return ApiResponse.onSuccess(HttpStatus.OK, diaryResponseDto);
+        }catch (Exception e) {
+            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
+        }
+    }
+
+    @GetMapping("/month")
+    public ApiResponse<List<PlanResponseDto>> getMonthlyPlans(@RequestParam String email, @RequestBody MonthPlanRequestDto monthPlanRequestDto) {
+        try {
+            YearMonth ym = YearMonth.parse(monthPlanRequestDto.getYearMonth());
+            List<PlanResponseDto> planResponseDtos = planService.getMonthlyPlans(email, ym);
+            return ApiResponse.onSuccess(HttpStatus.OK, planResponseDtos);
+        }catch (Exception e) {
+            return ApiResponse.onFailure(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()), "서버에서 오류가 발생했습니다.");
+        }
+    }
+
+
 }
 

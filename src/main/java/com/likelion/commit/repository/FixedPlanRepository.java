@@ -13,7 +13,7 @@ import java.util.List;
 
 @Repository
 public interface FixedPlanRepository extends JpaRepository<FixedPlan, Long> {
-    List<FixedPlan> findByDateAndUser_Email(LocalDate date, String email);
+    List<FixedPlan> findByUser_EmailAndIsWeekend(String email, boolean isWeekend);
 
-    List<FixedPlan> findByUserAndDateGreaterThan(User user, LocalDate date);
+//    List<FixedPlan> findByUserAndDateGreaterThan(User user, LocalDate date);
 }

@@ -1,6 +1,7 @@
 package com.likelion.commit.repository;
 
 import com.likelion.commit.entity.Plan;
+import com.likelion.commit.entity.PlanStatus;
 import com.likelion.commit.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,4 +19,5 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
     List<Plan> findByDateAndUser_Email(LocalDate date, String email);
     @Query("SELECT p FROM Plan p WHERE p.date > :currentDate AND p.user.email = :email ORDER BY p.date ASC")
     List<Plan> findUpcomingPlans(@Param("currentDate") LocalDate currentDate, @Param("email") String email);
+    List<Plan> findByUser_EmailAndDateBetween(String email, LocalDate startDate, LocalDate endDate);
 }

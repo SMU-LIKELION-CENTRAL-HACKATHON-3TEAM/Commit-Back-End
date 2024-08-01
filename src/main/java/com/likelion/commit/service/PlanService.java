@@ -7,10 +7,7 @@ import com.likelion.commit.dto.response.TimeTableResponseDto;
 import com.likelion.commit.entity.*;
 import com.likelion.commit.gloabal.exception.CustomException;
 import com.likelion.commit.gloabal.response.ErrorCode;
-import com.likelion.commit.repository.FixedPlanRepository;
-import com.likelion.commit.repository.PlanRepository;
-import com.likelion.commit.repository.TimeTableRepository;
-import com.likelion.commit.repository.UserRepository;
+import com.likelion.commit.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,10 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -36,6 +32,7 @@ public class PlanService {
     private final FixedPlanRepository fixedPlanRepository;
 
     private final TimeTableRepository timeTableRepository;
+    private final DiaryRepository diaryRepository;
 
 
     public void createDefaultFixedPlans(User user) {
@@ -139,6 +136,7 @@ public class PlanService {
                     .priority(plan.getPriority())
                     .content(plan.getContent())
                     .isFixed(false)
+                    .user(user)
                     .build()
             );
         } else throw new CustomException(ErrorCode.UNAUTHORIZED_401);
@@ -205,36 +203,21 @@ public class PlanService {
         }
     }
 
-//    @Transactional
-//    public void updateFixedTime(String email, Long fixedPlanId, PlanTimeRequestDto planTimeRequestDto) {
-//        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
-//        FixedPlan existingFixedPlan = fixedPlanRepository.findById(fixedPlanId).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
-//
-//        LocalDate changeDate = LocalDate.now();    // 지금 기준 변경
-//        LocalDateTime newStartTime = planTimeRequestDto.getStartTime();
-//        LocalDateTime newEndTime = planTimeRequestDto.getEndTime();
-//
-//
-//        // FixedPlan의 날짜가 변경된 날짜와 동일하거나 이후인 경우에만 업데이트
-//        if (existingFixedPlan.getDate().isAfter(changeDate.minusDays(1))) {
-//            // 변경된 날짜 이후의 FixedPlan들을 조회
-//            List<FixedPlan> fixedPlansToUpdate = fixedPlanRepository.findByUserAndDateGreaterThan(user, changeDate.minusDays(1));
-//
-//            for (FixedPlan fixedPlan : fixedPlansToUpdate) {
-//                // 기존 FixedPlan의 날짜가 변경된 날짜와 동일하거나 이후인 경우에만 업데이트
-//                if (fixedPlan.getDate().isEqual(changeDate) || fixedPlan.getDate().isAfter(changeDate)) {
-//                    fixedPlan.setStartTime(newStartTime);
-//                    fixedPlan.setEndTime(newEndTime);
-//                    fixedPlanRepository.save(fixedPlan);
-//                }
-//            }
-//        }
-//        // 변경된 FixedPlan의 시작과 끝 시간을 업데이트
-//        existingFixedPlan.setStartTime(newStartTime);
-//        existingFixedPlan.setEndTime(newEndTime);
-//        fixedPlanRepository.save(existingFixedPlan);
-//
-//    }
+    @Transactional
+    public void updateFixedTime(String email, Long fixedPlanId, PlanTimeRequestDto planTimeRequestDto) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        FixedPlan fixedPlan = fixedPlanRepository.findById(fixedPlanId).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
+
+        LocalDate date = LocalDate.now();    // 지금 기준 변경
+
+        LocalTime newStartTime = planTimeRequestDto.getStartTime();
+        LocalTime newEndTime = planTimeRequestDto.getEndTime();
+
+        fixedPlan.setStartTime(newStartTime);
+        fixedPlan.setEndTime(newEndTime);
+
+        fixedPlanRepository.save(fixedPlan);
+    }
 
     public List<PlanResponseDto> getPlans(String email, PlanDateRequestDto planDateRequestDto) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
@@ -246,7 +229,7 @@ public class PlanService {
     @Transactional
     public TimeTableResponseDto getTimeTable(String email, PlanDateRequestDto planDateRequestDto) {
         LocalDate date = planDateRequestDto.getDate();
-
+        boolean isWeekend = (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY);
         // 사용자 조회
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
@@ -258,7 +241,7 @@ public class PlanService {
             //미래인 경우
             // 저장된 Time Table이 없는 경우
             return TimeTableResponseDto.builder()
-                    .fixedPlans(fixedPlanRepository.findByDateAndUser_Email(date, email)
+                    .fixedPlans(fixedPlanRepository.findByUser_EmailAndIsWeekend(email, isWeekend)
                             .stream()
                             .map(TimeTableResponseDto.TimeTableResponse::from)
                             .toList())
@@ -278,7 +261,7 @@ public class PlanService {
 
             //fixedPlans 가 없는 경우 = plans만 있는 경우
             if (fixedPlans.isEmpty()) {
-                fixedPlans = fixedPlanRepository.findByDateAndUser_Email(date, email)
+                fixedPlans = fixedPlanRepository.findByUser_EmailAndIsWeekend(email, isWeekend)
                         .stream()
                         .map(TimeTableResponseDto.TimeTableResponse::from)
                         .toList();
@@ -344,5 +327,48 @@ public class PlanService {
         return PlanResponseDto.from(plans);
     }
 
+    @Transactional
+    public Long finish(String email, FinishRequestDto finishRequestDto){
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
+        LocalDate date = finishRequestDto.getDate();
+        boolean isWeekend = (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY);
+
+        // 고정 Plan만 저장
+        // Custom Plan들은 Complete에서 저장함.
+        List<FixedPlan> fixedPlans = fixedPlanRepository.findByUser_EmailAndIsWeekend(email, isWeekend);
+
+        List<TimeTable> timeTables = new ArrayList<>();
+        for (FixedPlan fixedPlan : fixedPlans) {
+            TimeTable timeTable = TimeTable.builder()
+                    .date(date)
+                    .startTime(fixedPlan.getStartTime())
+                    .endTime(fixedPlan.getEndTime())
+                    .priority(0)
+                    .content(fixedPlan.getContent())
+                    .isFixed(true)
+                    .planId(fixedPlan.getId()) // FixedPlan의 ID를 저장
+                    .user(fixedPlan.getUser())
+                    .build();
+            timeTables.add(timeTable);
+        }
+
+        timeTableRepository.saveAll(timeTables);
+        Diary diary = finishRequestDto.toEntity();
+        diary.setUser(user);
+        diaryRepository.save(diary);
+
+        return diary.getId();
+    }
+
+
+    public List<PlanResponseDto> getMonthlyPlans(String email, YearMonth yearMonth) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
+        LocalDate startDate = yearMonth.atDay(1); // 해당 월의 첫날
+        LocalDate endDate = yearMonth.atEndOfMonth(); // 해당 월의 마지막 날
+
+        List<Plan> plans = planRepository.findByUser_EmailAndDateBetween(email, startDate, endDate);
+
+        return PlanResponseDto.from(plans);
+    }
 
 }
