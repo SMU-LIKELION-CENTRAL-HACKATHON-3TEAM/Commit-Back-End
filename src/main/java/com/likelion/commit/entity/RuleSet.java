@@ -1,7 +1,7 @@
 package com.likelion.commit.entity;
 
 
-import com.likelion.commit.dto.UpdateRuleSetRequestDto;
+import com.likelion.commit.dto.request.UpdateRuleSetRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package com.likelion.commit.dto;
+package com.likelion.commit.dto.response;
 
 
 import com.likelion.commit.entity.RuleSet;

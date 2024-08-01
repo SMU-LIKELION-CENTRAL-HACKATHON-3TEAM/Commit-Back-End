@@ -1,4 +1,4 @@
-package com.likelion.commit.dto;
+package com.likelion.commit.dto.request;
 
 
 import com.likelion.commit.entity.User;

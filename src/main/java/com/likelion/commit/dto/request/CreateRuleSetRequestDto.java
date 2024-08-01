@@ -1,4 +1,4 @@
-package com.likelion.commit.dto;
+package com.likelion.commit.dto.request;
 
 
 import com.likelion.commit.entity.RuleSet;
@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-public class UpdateRuleSetRequestDto {
+public class CreateRuleSetRequestDto {
+
     public String WLBalance;
     public String sleepTime;
     public String exerciseTime;
