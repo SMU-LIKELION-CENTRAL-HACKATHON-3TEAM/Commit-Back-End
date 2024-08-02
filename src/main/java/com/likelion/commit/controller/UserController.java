@@ -1,5 +1,6 @@
 package com.likelion.commit.controller;
 
+import com.likelion.commit.Security.dto.LoginRequestDto;
 import com.likelion.commit.dto.request.CreateRuleSetRequestDto;
 import com.likelion.commit.dto.request.CreateUserRequestDto;
 import com.likelion.commit.dto.request.UpdatePasswordRequestDto;
@@ -13,6 +14,9 @@ import com.likelion.commit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -47,10 +51,10 @@ public class UserController {
     }
 
     @PutMapping("/updatePassword")
-    public ApiResponse<String> updatePassword(@RequestParam("email") String email,
+    public ApiResponse<String> updatePassword(@AuthenticationPrincipal UserDetails userDetails,
                                               @RequestBody UpdatePasswordRequestDto updatePasswordRequestDto) {
         try {
-            userService.updatePassword(email, updatePasswordRequestDto);
+            userService.updatePassword(userDetails.getUsername(), updatePasswordRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, "비밀번호 변경이 완료되었습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "사용자를 찾을 수 없습니다.");
@@ -60,9 +64,9 @@ public class UserController {
     }
 
     @DeleteMapping("/delete")
-    public ApiResponse<String> deleteUser(@RequestParam("email") String email) {
+    public ApiResponse<String> deleteUser(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            userService.deleteUser(email);
+            userService.deleteUser(userDetails.getUsername());
             return ApiResponse.onSuccess(HttpStatus.NO_CONTENT, "회원 탈퇴가 완료되었습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "사용자를 찾을 수 없습니다.");
@@ -72,9 +76,9 @@ public class UserController {
     }
 
     @GetMapping("")
-    public ApiResponse<UserResponseDto> getUser(@RequestParam("email") String email) {
+    public ApiResponse<UserResponseDto> getUser(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            UserResponseDto user = userService.getUser(email);
+            UserResponseDto user = userService.getUser(userDetails.getUsername());
             return ApiResponse.onSuccess(HttpStatus.OK, user);
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "사용자를 찾을 수 없습니다.");
@@ -86,10 +90,10 @@ public class UserController {
     // RuleSet 부분
 
     @PostMapping("/ruleSet/create")
-    public ApiResponse<Map<String, Long>> createRuleSet(@RequestParam("email") String email,
+    public ApiResponse<Map<String, Long>> createRuleSet(@AuthenticationPrincipal UserDetails userDetails,
                                                         @RequestBody CreateRuleSetRequestDto createRuleSetRequestDto) {
         try {
-            long ruleSetId = ruleSetService.createRuleSet(email, createRuleSetRequestDto);
+            long ruleSetId = ruleSetService.createRuleSet(userDetails.getUsername(), createRuleSetRequestDto);
 
             Map<String, Long> result = new HashMap<>();
             result.put("ruleSetId", ruleSetId);
@@ -105,9 +109,9 @@ public class UserController {
 
 
     @GetMapping("/ruleSet")
-    public ApiResponse<RuleSetResponseDto> getRuleSet(@RequestParam("email") String email) {
+    public ApiResponse<RuleSetResponseDto> getRuleSet(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            RuleSetResponseDto ruleSet = ruleSetService.getRuleSet(email);
+            RuleSetResponseDto ruleSet = ruleSetService.getRuleSet(userDetails.getUsername());
             return ApiResponse.onSuccess(HttpStatus.OK, ruleSet);
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "규칙을 찾을 수 없습니다.");
@@ -117,16 +121,27 @@ public class UserController {
     }
 
     @PutMapping("/ruleSet/update")
-    public ApiResponse<String> updateRuleSet(@RequestParam("email") String email,
+    public ApiResponse<String> updateRuleSet(@AuthenticationPrincipal UserDetails userDetails,
                                              @RequestBody UpdateRuleSetRequestDto updateRuleSetRequestDto) {
         try {
-            ruleSetService.updateRuleSet(email, updateRuleSetRequestDto);
+            ruleSetService.updateRuleSet(userDetails.getUsername(), updateRuleSetRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, "커스텀 규칙이 수정되었습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "규칙을 찾을 수 없습니다.");
         } catch (Exception e) {
             return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
         }
+    }
+
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDTO){
+        return null;
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@AuthenticationPrincipal UserDetails userDetails) {
+        return null;
     }
 }
 

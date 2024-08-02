@@ -11,8 +11,12 @@ import com.likelion.commit.repository.FixedPlanRepository;
 import com.likelion.commit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.security.InvalidParameterException;
 
 @Slf4j
 @Service
@@ -21,14 +25,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
     private final UserRepository userRepository;
     private final FixedPlanRepository fixedPlanRepository;
-//    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private final PlanService planService;
 
 
     @Transactional
     public long createUser(CreateUserRequestDto createUserRequestDto){
-        User user = createUserRequestDto.toEntity(/*passwordEncoder*/);
+        User user = createUserRequestDto.toEntity(passwordEncoder);
         userRepository.save(user);
         planService.createDefaultFixedPlans(user);
         return user.getId();
@@ -36,16 +40,19 @@ public class UserService {
 
     @Transactional
     public void updatePassword(String email, UpdatePasswordRequestDto updatePasswordRequestDto){
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
-        user.setPassword(updatePasswordRequestDto.getNewPassword());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
 
-//        if(passwordEncoder.matches(user.getPassword(), updatePasswordRequestDto.getCurrentPassword())) {
-//            user.setPassword(passwordEncoder.encode(updatePasswordRequestDto.getNewPassword()));
-//        }
-//        else{
-//            throw new InvalidParameterException("현재 비밀번호와 입력한 비밀번호가 다릅니다.");
-//        }
+        // 현재 비밀번호가 맞는지 확인
+        if (passwordEncoder.matches(updatePasswordRequestDto.getCurrentPassword(), user.getPassword())) {
+            // 새로운 비밀번호 인코딩 후 저장
+            user.setPassword(passwordEncoder.encode(updatePasswordRequestDto.getNewPassword()));
+            userRepository.save(user); // 변경된 비밀번호를 저장
+        } else {
+            throw new InvalidParameterException("현재 비밀번호와 입력한 비밀번호가 다릅니다.");
+        }
     }
+
 
     @Transactional
     public void deleteUser(String email){
