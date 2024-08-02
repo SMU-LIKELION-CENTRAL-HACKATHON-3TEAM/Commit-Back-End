@@ -1,5 +1,8 @@
 package com.likelion.commit.controller;
 
+import com.likelion.commit.Security.dto.JwtDto;
+import com.likelion.commit.Security.userDetails.CustomUserDetails;
+import com.likelion.commit.Security.utils.JwtUtil;
 import com.likelion.commit.dto.response.KakaoUserInfoResponseDto;
 import com.likelion.commit.gloabal.exception.CustomException;
 import com.likelion.commit.service.KakaoService;
@@ -21,21 +24,20 @@ import java.io.IOException;
 public class KakaoLoginController {
 
     private final KakaoService kakaoService;
-
+    private final JwtUtil jwtUtil;
     @GetMapping("/callback")
     public ResponseEntity<?> callback(@RequestParam("code") String code) {
         try {
             // 액세스 토큰 얻기
             String accessToken = kakaoService.getAccessTokenFromKakao(code);
-            log.info("토큰 가져오기 성공");
+
             // 사용자 정보 얻기
             KakaoUserInfoResponseDto userInfo = kakaoService.getUserInfo(accessToken);
-            log.info("사용자 정보 가져오기 성공");
+
             // 사용자 등록 또는 기존 사용자 찾기
-            Long userId = kakaoService.registerUserFromKakao(userInfo);
-            log.info("사용자 생성 성공");
-            // 성공적으로 사용자 ID 반환
-            return ResponseEntity.ok(userId);
+            JwtDto jwtDto = kakaoService.registerUserFromKakao(userInfo);
+
+            return ResponseEntity.ok(jwtDto);
 
         } catch (CustomException e) {
             // 사용자 정의 예외 처리

@@ -13,7 +13,6 @@ import java.security.SignatureException;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(originPatterns = "*" ,value = "*")
 @RequestMapping("/auth")
 public class AuthController {
 

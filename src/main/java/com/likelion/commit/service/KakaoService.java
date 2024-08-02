@@ -1,11 +1,12 @@
 package com.likelion.commit.service;
 
+import com.likelion.commit.Security.dto.JwtDto;
+import com.likelion.commit.Security.userDetails.CustomUserDetails;
+import com.likelion.commit.Security.utils.JwtUtil;
 import com.likelion.commit.dto.response.KakaoTokenResponseDto;
 import com.likelion.commit.dto.response.KakaoUserInfoResponseDto;
 import com.likelion.commit.entity.AuthType;
 import com.likelion.commit.entity.User;
-import com.likelion.commit.gloabal.exception.CustomException;
-import com.likelion.commit.gloabal.response.ErrorCode;
 import com.likelion.commit.repository.UserRepository;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import jakarta.transaction.Transactional;
@@ -31,11 +32,13 @@ public class KakaoService {
     private final String KAUTH_TOKEN_URL_HOST;
     private final String KAUTH_USER_URL_HOST;
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Autowired
-    public KakaoService(@Value("${kakao.client_id}") String clientId, UserRepository userRepository) {
+    public KakaoService(@Value("${kakao.client_id}") String clientId, UserRepository userRepository, JwtUtil jwtUtil) {
         this.clientId = clientId;
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
         KAUTH_TOKEN_URL_HOST ="https://kauth.kakao.com";
         KAUTH_USER_URL_HOST = "https://kapi.kakao.com";
     }
@@ -95,25 +98,39 @@ public class KakaoService {
 
 
     @Transactional
-    public Long registerUserFromKakao(KakaoUserInfoResponseDto userInfo) {
+    public JwtDto registerUserFromKakao(KakaoUserInfoResponseDto userInfo) {
         // 이메일로 기존 사용자를 찾음
-        Optional<User> existingUser = userRepository.findByEmail(userInfo.getKakaoAccount().getEmail());
-        if (existingUser.isPresent()) {
+        Optional<User> existingUserOpt = userRepository.findByEmail(userInfo.getKakaoAccount().getEmail());
+
+        User user;
+        if (existingUserOpt.isPresent()) {
             // 이미 등록된 사용자
-            return existingUser.get().getId();
+            user = existingUserOpt.get();
+        } else {
+            // 새로운 사용자 등록
+            user = User.builder()
+                    .name(userInfo.getKakaoAccount().getProfile().getNickName())
+                    .email(userInfo.getKakaoAccount().getEmail())
+                    .password(null)  // 비밀번호는 필요 없음
+                    .authType(AuthType.KAKAO)
+                    .Role("USER") // 권한
+                    .build();
+
+            user = userRepository.save(user);
         }
 
+        // CustomUserDetails 객체 생성
+        CustomUserDetails userDetails = new CustomUserDetails(
+                user.getEmail(),
+                user.getPassword(),
+                user.getRole()
+        );
 
-        // 새로운 사용자 등록
-        User newUser = User.builder()
-                .name(userInfo.getKakaoAccount().getProfile().getNickName())
-                .email(userInfo.getKakaoAccount().getEmail())
-                .password(null)    // 인증인가 추가 시 encodePassword로 변경
-                .authType(AuthType.KAKAO)
-                .Role("USER")
-                .build();
+        // JWT 생성
+        String accessToken = jwtUtil.createJwtAccessToken(userDetails);
+        String refreshToken = jwtUtil.createJwtRefreshToken(userDetails);
 
-        User savedUser = userRepository.save(newUser);
-        return savedUser.getId(); // 새로 등록된 사용자 ID 반환
+        // JwtDto 생성 및 반환
+        return new JwtDto(accessToken, refreshToken);
     }
 }
