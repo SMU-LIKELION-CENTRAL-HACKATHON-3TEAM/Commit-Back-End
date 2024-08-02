@@ -6,6 +6,8 @@ import com.likelion.commit.Security.utils.JwtUtil;
 import com.likelion.commit.dto.response.KakaoUserInfoResponseDto;
 import com.likelion.commit.gloabal.exception.CustomException;
 import com.likelion.commit.service.KakaoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,10 +23,15 @@ import java.io.IOException;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("")
+@Tag(name = "Kakao Login API", description = "Kakao 로그인 관련 API 엔드포인트")
 public class KakaoLoginController {
 
     private final KakaoService kakaoService;
     private final JwtUtil jwtUtil;
+    @Operation(
+            method = "GET",
+            summary = "카카오 Callback",
+            description = "Kakao OAuth 인증 코드로부터 액세스 토큰을 얻고, 사용자 정보를 가져와 JWT 토큰을 발급합니다.")
     @GetMapping("/callback")
     public ResponseEntity<?> callback(@RequestParam("code") String code) {
         try {
