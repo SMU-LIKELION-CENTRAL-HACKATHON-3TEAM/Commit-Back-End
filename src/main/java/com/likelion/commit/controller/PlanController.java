@@ -14,10 +14,14 @@ import com.likelion.commit.service.PlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Slf4j
@@ -30,10 +34,10 @@ public class PlanController {
     private final DiaryService diaryService;
 
     @PostMapping("/create")
-    public ApiResponse<List<PlanResponseDto>> createPlans(@RequestParam String email,
+    public ApiResponse<List<PlanResponseDto>> createPlans(@AuthenticationPrincipal UserDetails userDetails,
                                                           @RequestBody List<CreatePlanRequestDto> createPlanRequestDtoList) {
         try {
-            List<PlanResponseDto> responseDtos = planService.createPlans(email, createPlanRequestDtoList);
+            List<PlanResponseDto> responseDtos = planService.createPlans(userDetails.getUsername(), createPlanRequestDtoList);
             return ApiResponse.onSuccess(HttpStatus.CREATED, responseDtos);
         } catch (Exception e) {
             log.error("Error creating plans: ", e);
@@ -42,10 +46,10 @@ public class PlanController {
     }
 
     @PutMapping("/update")
-    public ApiResponse<String> updatePlan(@RequestParam String email,
+    public ApiResponse<String> updatePlan(@AuthenticationPrincipal UserDetails userDetails,
                                           @RequestBody List<UpdatePlanRequestDto> updatePlanRequestDtos) {
         try {
-            planService.updatePlans(email, updatePlanRequestDtos);
+            planService.updatePlans(userDetails.getUsername(), updatePlanRequestDtos);
             return ApiResponse.onSuccess(HttpStatus.OK, "일정 수정에 설정했습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
@@ -56,10 +60,10 @@ public class PlanController {
     }
 
     @DeleteMapping("/delete")
-    public ApiResponse<String> deletePlan(@RequestParam String email,
+    public ApiResponse<String> deletePlan(@AuthenticationPrincipal UserDetails userDetails,
                                           @RequestBody List<DeletePlanRequestDto> deletePlanRequestDtos) {
         try {
-            planService.deletePlans(email, deletePlanRequestDtos);
+            planService.deletePlans(userDetails.getUsername(), deletePlanRequestDtos);
             return ApiResponse.onSuccess(HttpStatus.OK, "일정 삭제 완료했습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
@@ -70,10 +74,10 @@ public class PlanController {
     }
 
     @PostMapping("/complete/{planId}")
-    public ApiResponse<String> completePlan(@RequestParam String email, @PathVariable Long planId,
+    public ApiResponse<String> completePlan(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId,
                                             @RequestBody PlanTimeRequestDto planTimeRequestDto) {
         try {
-            planService.completePlan(email, planId, planTimeRequestDto);
+            planService.completePlan(userDetails.getUsername(), planId, planTimeRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, "일정 완료 했습니다. planId :" + planId);
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
@@ -84,9 +88,9 @@ public class PlanController {
     }
 
     @PostMapping("/cancel/{planId}")
-    public ApiResponse<String> cancelPlan(@RequestParam String email, @PathVariable Long planId) {
+    public ApiResponse<String> cancelPlan(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId) {
         try {
-            planService.cancelPlan(email, planId);
+            planService.cancelPlan(userDetails.getUsername(), planId);
             return ApiResponse.onSuccess(HttpStatus.OK, "일정을 취소 했습니다. planId :" + planId);
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
@@ -97,10 +101,10 @@ public class PlanController {
     }
 
     @PostMapping("/delay/{planId}")
-    public ApiResponse<String> delayPlan(@RequestParam String email, @PathVariable Long planId,
+    public ApiResponse<String> delayPlan(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId,
                                          @RequestBody DelayPlanRequestDto delayPlanRequestDto) {
         try {
-            planService.delayPlan(email, planId, delayPlanRequestDto);
+            planService.delayPlan(userDetails.getUsername(), planId, delayPlanRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, "일정 미루기를 완료 했습니다. planId :" + planId);
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
@@ -111,10 +115,10 @@ public class PlanController {
     }
 
     @PutMapping("/time/{planId}")
-    public ApiResponse<String> updateAddedTime(@RequestParam String email, @PathVariable Long planId,
+    public ApiResponse<String> updateAddedTime(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId,
                                                @RequestBody PlanTimeRequestDto planTimeRequestDto) {
         try {
-            planService.updateAddedTime(email, planId, planTimeRequestDto);
+            planService.updateAddedTime(userDetails.getUsername(), planId, planTimeRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, "일정의 시간을 수정했습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
@@ -125,10 +129,10 @@ public class PlanController {
     }
 
     @PutMapping("/timetable/time/{fixedPlanId}")
-    public ApiResponse<String> updateFixedTime(@RequestParam String email, @PathVariable Long fixedPlanId,
+    public ApiResponse<String> updateFixedTime(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long fixedPlanId,
                                                @RequestBody PlanTimeRequestDto planTimeRequestDto) {
         try {
-            planService.updateFixedTime(email, fixedPlanId, planTimeRequestDto);
+            planService.updateFixedTime(userDetails.getUsername(), fixedPlanId, planTimeRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, "일정의 시간을 수정했습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
@@ -139,9 +143,9 @@ public class PlanController {
     }
 
     @GetMapping("/date")
-    public ApiResponse<List<PlanResponseDto>> getPlan(@RequestParam String email, @RequestBody PlanDateRequestDto planDateRequestDto) {
+    public ApiResponse<List<PlanResponseDto>> getPlan(@AuthenticationPrincipal UserDetails userDetails, @RequestBody PlanDateRequestDto planDateRequestDto) {
         try {
-            List<PlanResponseDto> plans = planService.getPlans(email, planDateRequestDto);
+            List<PlanResponseDto> plans = planService.getPlans(userDetails.getUsername(), planDateRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, plans);
         } catch (Exception e) {
             log.error("Error retrieving plans: ", e);
@@ -150,9 +154,9 @@ public class PlanController {
     }
 
     @GetMapping("/timetable")
-    public ApiResponse<TimeTableResponseDto> getTimeTable(@RequestParam String email, @RequestBody PlanDateRequestDto planDateRequestDto) {
+    public ApiResponse<TimeTableResponseDto> getTimeTable(@AuthenticationPrincipal UserDetails userDetails, @RequestBody PlanDateRequestDto planDateRequestDto) {
         try {
-            TimeTableResponseDto timeTable = planService.getTimeTable(email, planDateRequestDto);
+            TimeTableResponseDto timeTable = planService.getTimeTable(userDetails.getUsername(), planDateRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, timeTable);
         } catch (Exception e) {
             log.error("Error retrieving timetable: ", e);
@@ -161,9 +165,9 @@ public class PlanController {
     }
 
     @GetMapping("/upcoming")
-    public ApiResponse<List<PlanResponseDto>> getUpcomingPlans(@RequestParam String email) {
+    public ApiResponse<List<PlanResponseDto>> getUpcomingPlans(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            List<PlanResponseDto> upcomingPlans = planService.getUpcomingPlans(email);
+            List<PlanResponseDto> upcomingPlans = planService.getUpcomingPlans(userDetails.getUsername());
             return ApiResponse.onSuccess(HttpStatus.OK, upcomingPlans);
         } catch (Exception e) {
             log.error("Error retrieving upcoming plans: ", e);
@@ -172,10 +176,10 @@ public class PlanController {
     }
 
     @PostMapping("/calendar/create")
-    public ApiResponse<List<PlanResponseDto>> createCalendarPlans(@RequestParam String email,
+    public ApiResponse<List<PlanResponseDto>> createCalendarPlans(@AuthenticationPrincipal UserDetails userDetails,
                                                                   @RequestBody CalendarPlanRequestDto calendarPlanRequestDto){
         try {
-            List<PlanResponseDto> planResponseDtos = planService.createCalendarPlans(email, calendarPlanRequestDto);
+            List<PlanResponseDto> planResponseDtos = planService.createCalendarPlans(userDetails.getUsername(), calendarPlanRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, planResponseDtos);
         } catch (IllegalArgumentException e) {
             return ApiResponse.onFailure(String.valueOf(HttpStatus.BAD_REQUEST.value()), e.getMessage());
@@ -186,17 +190,23 @@ public class PlanController {
 
 
     @PostMapping("finish")
-    public ApiResponse<String> finish(@RequestParam String email,
-                                      @RequestBody FinishRequestDto finishRequestDto){
-        Long diaryId = planService.finish(email, finishRequestDto);
-        return ApiResponse.onSuccess(HttpStatus.OK, "하루 마무리하기를 완료했습니다. diaryId :" + diaryId);
+    public ApiResponse<Map<String, Long>> finish(@AuthenticationPrincipal UserDetails userDetails,
+                                                 @RequestBody FinishRequestDto finishRequestDto) {
+        Long diaryId = planService.finish(userDetails.getUsername(), finishRequestDto);
+
+        // 결과를 Map으로 래핑
+        Map<String, Long> result = new HashMap<>();
+        result.put("diaryId", diaryId);
+
+        // 원하는 형식으로 응답 생성
+        return ApiResponse.onSuccess(HttpStatus.CREATED, result);
     }
 
     @GetMapping("/diary")
-    public ApiResponse<DiaryResponseDto> getDiary(@RequestParam String email,
+    public ApiResponse<DiaryResponseDto> getDiary(@AuthenticationPrincipal UserDetails userDetails,
                                                   @RequestBody DiaryDateRequestDto diaryDateRequestDto){
         try {
-            DiaryResponseDto diaryResponseDto = diaryService.getDiary(email, diaryDateRequestDto);
+            DiaryResponseDto diaryResponseDto = diaryService.getDiary(userDetails.getUsername(), diaryDateRequestDto);
             return ApiResponse.onSuccess(HttpStatus.OK, diaryResponseDto);
         }catch (Exception e) {
             return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
@@ -204,10 +214,10 @@ public class PlanController {
     }
 
     @GetMapping("/month")
-    public ApiResponse<List<PlanResponseDto>> getMonthlyPlans(@RequestParam String email, @RequestBody MonthPlanRequestDto monthPlanRequestDto) {
+    public ApiResponse<List<PlanResponseDto>> getMonthlyPlans(@AuthenticationPrincipal UserDetails userDetails, @RequestBody MonthPlanRequestDto monthPlanRequestDto) {
         try {
             YearMonth ym = YearMonth.parse(monthPlanRequestDto.getYearMonth());
-            List<PlanResponseDto> planResponseDtos = planService.getMonthlyPlans(email, ym);
+            List<PlanResponseDto> planResponseDtos = planService.getMonthlyPlans(userDetails.getUsername(), ym);
             return ApiResponse.onSuccess(HttpStatus.OK, planResponseDtos);
         }catch (Exception e) {
             return ApiResponse.onFailure(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()), "서버에서 오류가 발생했습니다.");

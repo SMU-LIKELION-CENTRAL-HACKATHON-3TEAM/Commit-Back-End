@@ -27,10 +27,14 @@ public class User {
     @Column
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    private AuthType authType;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "ruleSetId", referencedColumnName = "id")
     private RuleSet ruleSet;
+
+    private String Role;
 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -38,6 +42,8 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FixedPlan> fixedPlans;
+
+
     // 기타 맵핑 부분 추가
 
 }

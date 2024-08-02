@@ -12,3 +12,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         show_sql: true
+  jwt:
+    secret: o2eh1qu7yo978u2q1o7hyua2r7uyr2q9yi7commit
+    token:
+      access-expiration-time: 3600000
+      refresh-expiration-time: 86400000
+kakao:
+  client_id: 6aa6c76e0fecd5392cf38fb54fcf72b8
+  redirect_uri: http://localhost:8080/callback
