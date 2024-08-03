@@ -15,10 +15,10 @@ public class SwaggerConfig {
     // http://localhost:8080/swagger-ui/index.html#/
 
     @Bean
-    public OpenAPI lionshopAPI() {
+    public OpenAPI commitAPI() {
         Info info = new Info()
-                .title("Comfort Plant API") // API 제목
-                .description("멋쟁이 사자처럼 12기 2팀 스트레스 관리 앱 서비스, Comfort Plant API 입니다.") // 설명
+                .title("Commit API") // API 제목
+                .description("Commit API 명세서 입니다.") // 설명
                 .version("1.0.0"); //버전
 
         String jwtSchemeName = "accessToken";
