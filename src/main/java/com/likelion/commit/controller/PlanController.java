@@ -11,6 +11,8 @@ import com.likelion.commit.gloabal.response.ApiResponse;
 import com.likelion.commit.gloabal.response.ErrorCode;
 import com.likelion.commit.service.DiaryService;
 import com.likelion.commit.service.PlanService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,11 +30,14 @@ import java.util.NoSuchElementException;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/plan")
+@Tag(name = "일정 API", description = "일정 관련 API입니다.")
 public class PlanController {
 
     private final PlanService planService;
     private final DiaryService diaryService;
-
+    @Operation(method = "POST",
+            summary = "일정 생성",
+            description = "일정을 생성합니다. header에 accessToken과 body에 List<CreatePlanRequestDto>형태로 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
     @PostMapping("/create")
     public ApiResponse<List<PlanResponseDto>> createPlans(@AuthenticationPrincipal UserDetails userDetails,
                                                           @RequestBody List<CreatePlanRequestDto> createPlanRequestDtoList) {
@@ -45,6 +50,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "PUT",
+            summary = "일정 수정",
+            description = "일정을 수정합니다. header에 accessToken과 body에 List<UpdatePlanRequestDto>형태로 담아 요청합니다.")
     @PutMapping("/update")
     public ApiResponse<String> updatePlan(@AuthenticationPrincipal UserDetails userDetails,
                                           @RequestBody List<UpdatePlanRequestDto> updatePlanRequestDtos) {
@@ -59,6 +67,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "DELETE",
+            summary = "일정 삭제",
+            description = "일정을 삭제합니다. header에 accessToken과 body에 List<DeletePlanRequestDto>형태로 담아 요청합니다.")
     @DeleteMapping("/delete")
     public ApiResponse<String> deletePlan(@AuthenticationPrincipal UserDetails userDetails,
                                           @RequestBody List<DeletePlanRequestDto> deletePlanRequestDtos) {
@@ -72,13 +83,15 @@ public class PlanController {
             return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
         }
     }
-
+    @Operation(method = "POST",
+            summary = "일정 완료",
+            description = "메인화면에서 일정을 완료합니다. header에 accessToken과 url parameter에 일정id를 보내고 body에는 PlanTimeRequestDto형태로 담아 요청합니다.")
     @PostMapping("/complete/{planId}")
     public ApiResponse<String> completePlan(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId,
                                             @RequestBody PlanTimeRequestDto planTimeRequestDto) {
         try {
             planService.completePlan(userDetails.getUsername(), planId, planTimeRequestDto);
-            return ApiResponse.onSuccess(HttpStatus.OK, "일정 완료 했습니다. planId :" + planId);
+            return ApiResponse.onSuccess(HttpStatus.OK, "일정 완료 했습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
         } catch (Exception e) {
@@ -86,12 +99,14 @@ public class PlanController {
             return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
         }
     }
-
+    @Operation(method = "POST",
+            summary = "일정 취소",
+            description = "메인화면에서 일정을 취소합니다. header에 accessToken과 url parameter에 일정id 담아 요청합니다.")
     @PostMapping("/cancel/{planId}")
     public ApiResponse<String> cancelPlan(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId) {
         try {
             planService.cancelPlan(userDetails.getUsername(), planId);
-            return ApiResponse.onSuccess(HttpStatus.OK, "일정을 취소 했습니다. planId :" + planId);
+            return ApiResponse.onSuccess(HttpStatus.OK, "일정을 취소 했습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
         } catch (Exception e) {
@@ -100,12 +115,15 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "POST",
+            summary = "일정 미루기",
+            description = "메인화면에서 일정을 미룹니다. header에 accessToken과 url parameter에 일정id를 보내고 body에는 PlanTimeRequestDto형태로 담아 요청합니다.")
     @PostMapping("/delay/{planId}")
     public ApiResponse<String> delayPlan(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId,
                                          @RequestBody DelayPlanRequestDto delayPlanRequestDto) {
         try {
             planService.delayPlan(userDetails.getUsername(), planId, delayPlanRequestDto);
-            return ApiResponse.onSuccess(HttpStatus.OK, "일정 미루기를 완료 했습니다. planId :" + planId);
+            return ApiResponse.onSuccess(HttpStatus.OK, "일정 미루기를 완료 했습니다.");
         } catch (NoSuchElementException e) {
             return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "일정을 찾을 수 없습니다.");
         } catch (Exception e) {
@@ -114,6 +132,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "PUT",
+            summary = "커스텀 일정 수정",
+            description = "커스텀 일정을 수정합니다. header에 accessToken과 url parameter에 일정id를 보내고 body에는 PlanTimeRequestDto형태로 담아 요청합니다.")
     @PutMapping("/time/{planId}")
     public ApiResponse<String> updateAddedTime(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long planId,
                                                @RequestBody PlanTimeRequestDto planTimeRequestDto) {
@@ -128,6 +149,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "PUT",
+            summary = "고정 일정 수정",
+            description = "고정 일정을 수정합니다. header에 accessToken과 url parameter에 고정일정id를 보내고 body에는 PlanTimeRequestDto형태로 담아 요청합니다. 요청을 보낸시간 기준으로 전에는 변경 전 후에는 변경 후의 시간이 적용됩니다.")
     @PutMapping("/timetable/time/{fixedPlanId}")
     public ApiResponse<String> updateFixedTime(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long fixedPlanId,
                                                @RequestBody PlanTimeRequestDto planTimeRequestDto) {
@@ -142,6 +166,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "GET",
+            summary = "날짜별 일정 조회",
+            description = "날짜별 일정을 조회합니다. header에 accessToken과 body에는 PlanDateRequestDto형태로 담아 요청하면 List<PlanResponseDto> 형태로 반환합니다.")
     @GetMapping("/date")
     public ApiResponse<List<PlanResponseDto>> getPlan(@AuthenticationPrincipal UserDetails userDetails, @RequestBody PlanDateRequestDto planDateRequestDto) {
         try {
@@ -153,6 +180,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "GET",
+            summary = "날짜별 타임 테이블 조회",
+            description = "날짜별 타임 테이블을 조회합니다. header에 accessToken과 body에는 PlanDateRequestDto형태로 담아 요청합니다. 날짜별 일정 중 완료된 것들과 고정일정들이 TimeTableResponseDto 형태로 반환됩니다.")
     @GetMapping("/timetable")
     public ApiResponse<TimeTableResponseDto> getTimeTable(@AuthenticationPrincipal UserDetails userDetails, @RequestBody PlanDateRequestDto planDateRequestDto) {
         try {
@@ -164,6 +194,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "GET",
+            summary = "앞으로의 일정 조회",
+            description = "요청을 보내는 시점을 기준으로 다음날부터 최대 3가지의 가까운 일정들을 조회합니다. header에 accessToken을 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
     @GetMapping("/upcoming")
     public ApiResponse<List<PlanResponseDto>> getUpcomingPlans(@AuthenticationPrincipal UserDetails userDetails) {
         try {
@@ -174,7 +207,9 @@ public class PlanController {
             return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
         }
     }
-
+    @Operation(method = "POST",
+            summary = "캘린더 일정 추가",
+            description = "캘린더 화면에서 일정을 추가합니다. header에 accessToken과 body에 CalendarPlanRequestDto형태로 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
     @PostMapping("/calendar/create")
     public ApiResponse<List<PlanResponseDto>> createCalendarPlans(@AuthenticationPrincipal UserDetails userDetails,
                                                                   @RequestBody CalendarPlanRequestDto calendarPlanRequestDto){
@@ -189,6 +224,9 @@ public class PlanController {
     }
 
 
+    @Operation(method = "POST",
+            summary = "오늘 하루 마무리 하기",
+            description = "오늘 하루 마무리화면에서 이날의 기록사항과 해당일의 타임테이블을 저장합니다. header에 accessToken과 body에 FinishRequestDto형태로 담아 요청합니다. 이날의 기록사항 id를 반환합니다.")
     @PostMapping("finish")
     public ApiResponse<Map<String, Long>> finish(@AuthenticationPrincipal UserDetails userDetails,
                                                  @RequestBody FinishRequestDto finishRequestDto) {
@@ -202,6 +240,9 @@ public class PlanController {
         return ApiResponse.onSuccess(HttpStatus.CREATED, result);
     }
 
+    @Operation(method = "GET",
+            summary = "이날의 기록사항 조회",
+            description = "이날의 기록사항을 조회합니다. header에 accessToken과 body에 FinishRequestDto형태로 담아 요청하면 DiaryResponseDto형태로 반환합니다.")
     @GetMapping("/diary")
     public ApiResponse<DiaryResponseDto> getDiary(@AuthenticationPrincipal UserDetails userDetails,
                                                   @RequestBody DiaryDateRequestDto diaryDateRequestDto){
@@ -213,6 +254,9 @@ public class PlanController {
         }
     }
 
+    @Operation(method = "GET",
+            summary = "월별 일정 조회",
+            description = "캘린더 화면에서 월별 일정들을 조회합니다. header에 accessToken과 body에 MonthPlanRequestDto형태로 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
     @GetMapping("/month")
     public ApiResponse<List<PlanResponseDto>> getMonthlyPlans(@AuthenticationPrincipal UserDetails userDetails, @RequestBody MonthPlanRequestDto monthPlanRequestDto) {
         try {
