@@ -6,6 +6,8 @@ import com.likelion.commit.dto.response.RuleSetResponseDto;
 import com.likelion.commit.dto.request.UpdateRuleSetRequestDto;
 import com.likelion.commit.entity.RuleSet;
 import com.likelion.commit.entity.User;
+import com.likelion.commit.gloabal.exception.CustomException;
+import com.likelion.commit.gloabal.response.ErrorCode;
 import com.likelion.commit.repository.RuleSetRepository;
 import com.likelion.commit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,7 @@ public class RuleSetService {
 
     @Transactional
     public long createRuleSet(String email, CreateRuleSetRequestDto createRuleSetRequestDto){
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
         RuleSet ruleSet = createRuleSetRequestDto.toEntity();
         ruleSet.setUser(user);
         user.setRuleSet(ruleSet);
@@ -38,18 +40,15 @@ public class RuleSetService {
     }
 
     public RuleSetResponseDto getRuleSet(String email){
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
 
         return RuleSetResponseDto.from(user.getRuleSet());
     }
     @Transactional
     public void updateRuleSet(String email, UpdateRuleSetRequestDto updateRuleSetRequestDto){
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
 
         RuleSet ruleSet = user.getRuleSet();
         ruleSet.update(updateRuleSetRequestDto);
-
-        ruleSetRepository.save(ruleSet);
-
     }
 }

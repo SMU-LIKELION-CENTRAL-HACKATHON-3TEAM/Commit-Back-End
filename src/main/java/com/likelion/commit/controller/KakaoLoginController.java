@@ -8,15 +8,19 @@ import com.likelion.commit.gloabal.exception.CustomException;
 import com.likelion.commit.service.KakaoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.xml.stream.Location;
 import java.io.IOException;
 
 @Slf4j
@@ -33,27 +37,22 @@ public class KakaoLoginController {
             summary = "카카오 Callback",
             description = "Kakao OAuth 인증 코드로부터 액세스 토큰을 얻고, 사용자 정보를 가져와 JWT 토큰을 발급합니다.")
     @GetMapping("/callback")
-    public ResponseEntity<?> callback(@RequestParam("code") String code) {
-        try {
-            // 액세스 토큰 얻기
-            String accessToken = kakaoService.getAccessTokenFromKakao(code);
+    public ResponseEntity<?> callback(@RequestParam("code") String code, HttpServletResponse response) {
 
-            // 사용자 정보 얻기
-            KakaoUserInfoResponseDto userInfo = kakaoService.getUserInfo(accessToken);
+        // 액세스 토큰 얻기
+        String accessToken = kakaoService.getAccessTokenFromKakao(code);
 
-            // 사용자 등록 또는 기존 사용자 찾기
-            JwtDto jwtDto = kakaoService.registerUserFromKakao(userInfo);
+        // 사용자 정보 얻기
+        KakaoUserInfoResponseDto userInfo = kakaoService.getUserInfo(accessToken);
 
-            return ResponseEntity.ok(jwtDto);
+        // 사용자 등록 또는 기존 사용자 찾기
+        JwtDto jwtDto = kakaoService.registerUserFromKakao(userInfo);
 
-        } catch (CustomException e) {
-            // 사용자 정의 예외 처리
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(e.getMessage());
-        } catch (Exception e) {
-            // 일반 예외 처리
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("서버에서 오류가 발생했습니다.");
-        }
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        headers.add("Location", "http://localhost:3000?" +
+                "access=" + jwtDto.accessToken +
+                "&refresh=" + jwtDto.refreshToken);
+
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 }

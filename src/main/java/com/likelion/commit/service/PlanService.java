@@ -52,13 +52,13 @@ public class PlanService {
     }
 
     private void createFixedPlan(User user, boolean isWeekend, String startTime, String endTime, String content) {
-        FixedPlan fixedPlan = new FixedPlan();
-        fixedPlan.setUser(user);
-        fixedPlan.setStartTime(LocalTime.parse(startTime));
-        fixedPlan.setEndTime(LocalTime.parse(endTime));
-        fixedPlan.setWeekend(isWeekend);
-        fixedPlan.setContent(content);
-
+        FixedPlan fixedPlan = FixedPlan.builder()
+                .user(user)
+                .isWeekend(isWeekend)
+                .startTime(LocalTime.parse(startTime))
+                .endTime(LocalTime.parse(endTime))
+                .content(content)
+                .build();
         fixedPlanRepository.save(fixedPlan);
     }
 
@@ -66,7 +66,7 @@ public class PlanService {
     @Transactional
     public List<PlanResponseDto> createPlans(String email,
                                              List<CreatePlanRequestDto> createPlanRequestDtoList) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
 
         List<Plan> plans = createPlanRequestDtoList.stream().map(dto -> {
             Plan plan = dto.toEntity();
@@ -84,19 +84,17 @@ public class PlanService {
 
     @Transactional
     public void updatePlans(String email, List<UpdatePlanRequestDto> updatePlanRequestDtos) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
         List<Plan> plans = updatePlanRequestDtos.stream().map(dto -> {
-            Plan plan = planRepository.findById(dto.getPlanId()).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
+            Plan plan = planRepository.findById(dto.getPlanId()).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
             plan.update(dto);
             return plan;
         }).collect(Collectors.toList());
-
-        List<Plan> savedPlan = planRepository.saveAll(plans);
     }
 
     @Transactional
     public void deletePlans(String email, List<DeletePlanRequestDto> deletePlanRequestDtos) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() ->new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
 
         deletePlanRequestDtos.forEach(dto -> {
             planRepository.deleteById(dto.getPlanId());
@@ -105,8 +103,8 @@ public class PlanService {
 
     @Transactional
     public void completePlan(String email, Long planId, PlanTimeRequestDto planTimeRequestDto) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
-        Plan plan = planRepository.findById(planId).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
+        Plan plan = planRepository.findById(planId).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
 
 
@@ -118,11 +116,9 @@ public class PlanService {
 
             if (plan.getStatus().equals(PlanStatus.DELAYED)) {
                 planRepository.deleteById(plan.getChildPlan());
-                plan.setChildPlan(null);
-                plan.setDelayed(false);
+                plan.setDelayToDefault();
             }
-            plan.setStartTime(planTimeRequestDto.startTime);
-            plan.setEndTime(planTimeRequestDto.endTime);
+            plan.setTime(planTimeRequestDto.startTime, planTimeRequestDto.endTime);
             plan.setStatus(PlanStatus.COMPLETE);
             plan.setComplete(true);
 
@@ -144,10 +140,8 @@ public class PlanService {
 
     @Transactional
     public void cancelPlan(String email, Long planId) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
-        Plan plan = planRepository.findById(planId).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
-
-
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
+        Plan plan = planRepository.findById(planId).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
         if (plan.getUser().getEmail().equals(user.getEmail())) {
             if (plan.getStatus() == null) {
@@ -155,20 +149,19 @@ public class PlanService {
             }
             if (plan.getStatus().equals(PlanStatus.DELAYED)) {
                 planRepository.deleteById(plan.getChildPlan());
-                plan.setChildPlan(null);
-                plan.setDelayed(false);
+                plan.setDelayToDefault();
             }
             plan.setStatus(PlanStatus.CANCELED);
             plan.setComplete(false);
+        }else{
+            throw new CustomException((ErrorCode.UNAUTHORIZED_401));
         }
     }
 
     @Transactional
-    public void delayPlan(String email, Long planId, DelayPlanRequestDto delayPlanRequestDto) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
-        Plan plan = planRepository.findById(planId).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
-
-
+    public Long delayPlan(String email, Long planId, DelayPlanRequestDto delayPlanRequestDto) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
+        Plan plan = planRepository.findById(planId).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
         if (plan.getUser().getEmail().equals(user.getEmail())) {
             plan.setStatus(PlanStatus.DELAYED);
@@ -188,39 +181,48 @@ public class PlanService {
             plan.setChildPlan(childPlan.getId());
 
             planRepository.save(plan);
+            return plan.getChildPlan();
+        }
+        else{
+            throw new CustomException((ErrorCode.UNAUTHORIZED_401));
         }
     }
 
 
     @Transactional
     public void updateAddedTime(String email, Long planId, PlanTimeRequestDto planTimeRequestDto) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
-        Plan plan = planRepository.findById(planId).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
+        Plan plan = planRepository.findById(planId).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
         if (plan.getUser().getEmail().equals(user.getEmail())) {
-            plan.setStartTime(planTimeRequestDto.getStartTime());
-            plan.setEndTime(planTimeRequestDto.getEndTime());
+            plan.setTime(planTimeRequestDto.startTime, planTimeRequestDto.endTime);
+        }
+        else{
+            throw new CustomException((ErrorCode.UNAUTHORIZED_401));
         }
     }
 
     @Transactional
     public void updateFixedTime(String email, Long fixedPlanId, PlanTimeRequestDto planTimeRequestDto) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
-        FixedPlan fixedPlan = fixedPlanRepository.findById(fixedPlanId).orElseThrow(() -> new NoSuchElementException("일정을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
+        FixedPlan fixedPlan = fixedPlanRepository.findById(fixedPlanId).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
-        LocalDate date = LocalDate.now();    // 지금 기준 변경
 
-        LocalTime newStartTime = planTimeRequestDto.getStartTime();
-        LocalTime newEndTime = planTimeRequestDto.getEndTime();
+        if(fixedPlan.getUser().getEmail().equals(user.getEmail())){
+            LocalDate date = LocalDate.now();    // 지금 기준 변경
 
-        fixedPlan.setStartTime(newStartTime);
-        fixedPlan.setEndTime(newEndTime);
+            LocalTime newStartTime = planTimeRequestDto.getStartTime();
+            LocalTime newEndTime = planTimeRequestDto.getEndTime();
 
-        fixedPlanRepository.save(fixedPlan);
+            fixedPlan.updateTime(newStartTime, newEndTime);
+        }
+        else{
+            throw new CustomException((ErrorCode.UNAUTHORIZED_401));
+        }
     }
 
     public List<PlanResponseDto> getPlans(String email, PlanDateRequestDto planDateRequestDto) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
         List<Plan> plans = planRepository.findByDateAndUser_Email(planDateRequestDto.getDate(), email);
         return PlanResponseDto.from(plans);
     }
@@ -232,7 +234,7 @@ public class PlanService {
         boolean isWeekend = (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY);
         // 사용자 조회
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
 
         List<TimeTable> timeTables = timeTableRepository.findByUser_IdAndDate(user.getId(), date);
@@ -295,13 +297,13 @@ public class PlanService {
     @Transactional
     public List<PlanResponseDto> createCalendarPlans(String email, CalendarPlanRequestDto calendarPlanRequestDto){
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
 
         LocalDate startDate = calendarPlanRequestDto.getStartDate();
         LocalDate endDate = calendarPlanRequestDto.getEndDate();
 
         if (startDate.isAfter(endDate)) {
-            throw new IllegalArgumentException("시작일자가 종료일자보다 나중일 수 없습니다.");
+            throw new CustomException(ErrorCode.VALIDATION_FAILED);
         }
 
 

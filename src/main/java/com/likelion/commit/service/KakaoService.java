@@ -33,12 +33,14 @@ public class KakaoService {
     private final String KAUTH_USER_URL_HOST;
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final PlanService planService;
 
     @Autowired
-    public KakaoService(@Value("${kakao.client_id}") String clientId, UserRepository userRepository, JwtUtil jwtUtil) {
+    public KakaoService(@Value("${kakao.client_id}") String clientId, UserRepository userRepository, JwtUtil jwtUtil, PlanService planService) {
         this.clientId = clientId;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
+        this.planService = planService;
         KAUTH_TOKEN_URL_HOST ="https://kauth.kakao.com";
         KAUTH_USER_URL_HOST = "https://kapi.kakao.com";
     }
@@ -116,6 +118,7 @@ public class KakaoService {
                     .Role("USER") // 권한
                     .build();
 
+            planService.createDefaultFixedPlans(user);
             user = userRepository.save(user);
         }
 

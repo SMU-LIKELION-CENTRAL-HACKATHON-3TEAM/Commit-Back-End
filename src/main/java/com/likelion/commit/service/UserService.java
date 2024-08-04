@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.InvalidParameterException;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -32,6 +33,12 @@ public class UserService {
 
     @Transactional
     public long createUser(CreateUserRequestDto createUserRequestDto){
+        Optional<User> findUser = userRepository.findByEmail(createUserRequestDto.getEmail());
+
+        if(findUser.isPresent()){
+            throw new CustomException(ErrorCode.BAD_REQUEST_400);
+        }
+
         User user = createUserRequestDto.toEntity(passwordEncoder);
         userRepository.save(user);
         planService.createDefaultFixedPlans(user);
@@ -47,9 +54,6 @@ public class UserService {
         if (passwordEncoder.matches(updatePasswordRequestDto.getCurrentPassword(), user.getPassword())) {
             // 새로운 비밀번호 인코딩 후 저장
             user.setPassword(passwordEncoder.encode(updatePasswordRequestDto.getNewPassword()));
-            userRepository.save(user); // 변경된 비밀번호를 저장
-        } else {
-            throw new InvalidParameterException("현재 비밀번호와 입력한 비밀번호가 다릅니다.");
         }
     }
 
