@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -35,4 +34,8 @@ public class FixedPlan {
     @JoinColumn(name = "userId")
     private User user;
 
+    public void updateTime(LocalTime newStartTime, LocalTime newEndTime) {
+        startTime = newStartTime;
+        endTime = newEndTime;
+    }
 }

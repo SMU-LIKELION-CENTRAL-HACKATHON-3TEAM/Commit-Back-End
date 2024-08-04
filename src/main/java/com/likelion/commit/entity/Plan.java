@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -64,5 +63,35 @@ public class Plan {
         this.content = updatePlanRequestDto.getContent();
         this.priority = updatePlanRequestDto.getPriority();
         this.type = updatePlanRequestDto.getPlanType();
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setStatus(PlanStatus planStatus) {
+        this.status = planStatus;
+    }
+
+    public void setTime(LocalTime startTime, LocalTime endTime) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
+    public void setDelayToDefault() {
+        this.childPlan = null;
+        this.isDelayed = false;
+    }
+
+    public void setComplete(boolean b) {
+        isComplete = b;
+    }
+
+    public void setDelayed(boolean b) {
+        isDelayed = b;
+    }
+
+    public void setChildPlan(Long id) {
+        childPlan = id;
     }
 }

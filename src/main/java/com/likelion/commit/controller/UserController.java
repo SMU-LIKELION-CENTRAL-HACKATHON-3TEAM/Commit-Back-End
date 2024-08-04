@@ -13,6 +13,7 @@ import com.likelion.commit.service.RuleSetService;
 import com.likelion.commit.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -39,21 +40,16 @@ public class UserController {
             summary = "회원가입",
             description = "회원가입API입니다. CreateUserRequestDto 형태로 RequestBody에 담아서 요청합니다.")
     @PostMapping("/create")
-    public ApiResponse<Map<String, Long>> createUser(@RequestBody CreateUserRequestDto createUserRequestDto) {
-        try {
-            long userId = userService.createUser(createUserRequestDto);
+    public ApiResponse<Map<String, Long>> createUser(@Valid @RequestBody CreateUserRequestDto createUserRequestDto) {
 
-            // 결과 데이터 생성
-            Map<String, Long> result = new HashMap<>();
-            result.put("userId", userId);
+        long userId = userService.createUser(createUserRequestDto);
 
-            return ApiResponse.onSuccess(HttpStatus.CREATED, result);
-        } catch (Exception e) {
-            return ApiResponse.onFailure(
-                    ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(),
-                    "서버에서 오류가 발생했습니다."
-            );
-        }
+        // 결과 데이터 생성
+        Map<String, Long> result = new HashMap<>();
+        result.put("userId", userId);
+
+        return ApiResponse.onSuccess(HttpStatus.CREATED, "회원가입에 성공했습니다.", result);
+
     }
 
     @Operation(method = "PUT",
@@ -61,15 +57,10 @@ public class UserController {
             description = "로그인한 유저의 비밀번호를 변경합니다. header에 accessToken과 body에 UpdatePasswordRequestDto 형태로 담아서 요청합니다. ")
     @PutMapping("/updatePassword")
     public ApiResponse<String> updatePassword(@AuthenticationPrincipal UserDetails userDetails,
-                                              @RequestBody UpdatePasswordRequestDto updatePasswordRequestDto) {
-        try {
-            userService.updatePassword(userDetails.getUsername(), updatePasswordRequestDto);
-            return ApiResponse.onSuccess(HttpStatus.OK, "비밀번호 변경이 완료되었습니다.");
-        } catch (NoSuchElementException e) {
-            return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "사용자를 찾을 수 없습니다.");
-        } catch (Exception e) {
-            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
-        }
+                                              @Valid @RequestBody UpdatePasswordRequestDto updatePasswordRequestDto) {
+
+        userService.updatePassword(userDetails.getUsername(), updatePasswordRequestDto);
+        return ApiResponse.onSuccess(HttpStatus.OK, "비밀번호 변경이 완료되었습니다.", null);
     }
 
     @Operation(method = "DELETE",
@@ -77,14 +68,9 @@ public class UserController {
             description = "로그인한 유저를 삭제시킵니다. header에 accessToken을 담아 요청합니다.")
     @DeleteMapping("/delete")
     public ApiResponse<String> deleteUser(@AuthenticationPrincipal UserDetails userDetails) {
-        try {
-            userService.deleteUser(userDetails.getUsername());
-            return ApiResponse.onSuccess(HttpStatus.NO_CONTENT, "회원 탈퇴가 완료되었습니다.");
-        } catch (NoSuchElementException e) {
-            return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "사용자를 찾을 수 없습니다.");
-        } catch (Exception e) {
-            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
-        }
+
+        userService.deleteUser(userDetails.getUsername());
+        return ApiResponse.onSuccess(HttpStatus.NO_CONTENT, "회원 탈퇴가 완료되었습니다.", null);
     }
 
     @Operation(method = "GET",
@@ -92,14 +78,9 @@ public class UserController {
             description = "로그인한 유저의 정보를 조회합니다.  header에 accessToken을 담아 요청하면 UserResponseDto형태로 반환합니다.")
     @GetMapping("")
     public ApiResponse<UserResponseDto> getUser(@AuthenticationPrincipal UserDetails userDetails) {
-        try {
-            UserResponseDto user = userService.getUser(userDetails.getUsername());
-            return ApiResponse.onSuccess(HttpStatus.OK, user);
-        } catch (NoSuchElementException e) {
-            return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "사용자를 찾을 수 없습니다.");
-        } catch (Exception e) {
-            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
-        }
+
+        UserResponseDto user = userService.getUser(userDetails.getUsername());
+        return ApiResponse.onSuccess(HttpStatus.OK, "조회가 완료되었습니다.",user);
     }
 
     // RuleSet 부분
@@ -111,19 +92,12 @@ public class UserController {
     @PostMapping("/ruleSet/create")
     public ApiResponse<Map<String, Long>> createRuleSet(@AuthenticationPrincipal UserDetails userDetails,
                                                         @RequestBody CreateRuleSetRequestDto createRuleSetRequestDto) {
-        try {
-            long ruleSetId = ruleSetService.createRuleSet(userDetails.getUsername(), createRuleSetRequestDto);
+        long ruleSetId = ruleSetService.createRuleSet(userDetails.getUsername(), createRuleSetRequestDto);
 
-            Map<String, Long> result = new HashMap<>();
-            result.put("ruleSetId", ruleSetId);
+        Map<String, Long> result = new HashMap<>();
+        result.put("ruleSetId", ruleSetId);
 
-            return ApiResponse.onSuccess(HttpStatus.CREATED, result);
-        } catch (Exception e) {
-            return ApiResponse.onFailure(
-                    ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(),
-                    "서버에서 오류가 발생했습니다."
-            );
-        }
+        return ApiResponse.onSuccess(HttpStatus.CREATED, "커스텀 규칙이 생성되었습니다.",result);
     }
 
 
@@ -132,14 +106,8 @@ public class UserController {
             description = "사용자 설정에서 나만의 플래너 규칙을 조회합니다. header에 accessToken을 담아서 요청하면 RuleSetResponseDto형태로 반환합니다.")
     @GetMapping("/ruleSet")
     public ApiResponse<RuleSetResponseDto> getRuleSet(@AuthenticationPrincipal UserDetails userDetails) {
-        try {
             RuleSetResponseDto ruleSet = ruleSetService.getRuleSet(userDetails.getUsername());
-            return ApiResponse.onSuccess(HttpStatus.OK, ruleSet);
-        } catch (NoSuchElementException e) {
-            return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "규칙을 찾을 수 없습니다.");
-        } catch (Exception e) {
-            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
-        }
+            return ApiResponse.onSuccess(HttpStatus.OK, "조회에 성공했습니다.",ruleSet);
     }
     @Operation(method = "PUT",
             summary = "플래너 작성 규칙 수정",
@@ -147,21 +115,16 @@ public class UserController {
     @PutMapping("/ruleSet/update")
     public ApiResponse<String> updateRuleSet(@AuthenticationPrincipal UserDetails userDetails,
                                              @RequestBody UpdateRuleSetRequestDto updateRuleSetRequestDto) {
-        try {
+
             ruleSetService.updateRuleSet(userDetails.getUsername(), updateRuleSetRequestDto);
-            return ApiResponse.onSuccess(HttpStatus.OK, "커스텀 규칙이 수정되었습니다.");
-        } catch (NoSuchElementException e) {
-            return ApiResponse.onFailure(ErrorCode.NO_USER_DATA_REGISTERED.getCode(), "규칙을 찾을 수 없습니다.");
-        } catch (Exception e) {
-            return ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR_500.getCode(), "서버에서 오류가 발생했습니다.");
-        }
+            return ApiResponse.onSuccess(HttpStatus.OK, "커스텀 규칙이 수정되었습니다.", null);
     }
 
     @Operation(method = "POST",
             summary = "로그인",
             description = "로그인합니다. email과 password를 body에 담아서 전송합니다.")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDTO){
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto loginRequestDTO){
         return null;
     }
 

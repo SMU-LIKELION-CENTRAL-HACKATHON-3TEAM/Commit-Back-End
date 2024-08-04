@@ -8,7 +8,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -29,4 +28,7 @@ public class Diary {
     private User user;
 
 
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

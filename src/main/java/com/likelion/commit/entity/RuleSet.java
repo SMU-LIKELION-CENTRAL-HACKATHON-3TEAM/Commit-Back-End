@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -41,4 +40,7 @@ public class RuleSet {
         detail = updateRuleSetRequestDto.getDetail();
     }
 
+    public void setUser(User user) {
+        this.user = user;
+    }
 }
