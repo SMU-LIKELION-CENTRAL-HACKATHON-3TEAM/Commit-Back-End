@@ -38,6 +38,8 @@ public enum ErrorCode implements BaseErrorCode {
 
     //통신 과정 에러
     COMMUNICATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON500_1", "통신 과정에서 문제가 발생했습니다."),
+
+    GPT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GPT500_1", "GPT 통신 과정 중에 오류가 발생했습니다.")
     ;
 
 
