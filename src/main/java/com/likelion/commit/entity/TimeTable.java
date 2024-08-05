@@ -27,7 +27,8 @@ public class TimeTable {
 
     private LocalTime endTime;
 
-    private int priority;
+    @Enumerated(value = EnumType.STRING)
+    private PlanType planType;
 
     private String content;
 

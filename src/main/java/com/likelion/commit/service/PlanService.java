@@ -129,7 +129,7 @@ public class PlanService {
                     .date(plan.getDate())
                     .startTime(plan.getStartTime())
                     .endTime(plan.getEndTime())
-                    .priority(plan.getPriority())
+                    .planType(plan.getType())
                     .content(plan.getContent())
                     .isFixed(false)
                     .user(user)
@@ -345,7 +345,6 @@ public class PlanService {
                     .date(date)
                     .startTime(fixedPlan.getStartTime())
                     .endTime(fixedPlan.getEndTime())
-                    .priority(0)
                     .content(fixedPlan.getContent())
                     .isFixed(true)
                     .planId(fixedPlan.getId()) // FixedPlan의 ID를 저장

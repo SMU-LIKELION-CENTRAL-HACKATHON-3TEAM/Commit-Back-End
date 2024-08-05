@@ -1,8 +1,11 @@
 package com.likelion.commit.dto.response;
 
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.likelion.commit.entity.FixedPlan;
+import com.likelion.commit.entity.PlanType;
 import com.likelion.commit.entity.TimeTable;
+import com.likelion.commit.util.LocalTimeDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,11 +33,16 @@ public class TimeTableResponseDto {
     public static class TimeTableResponse {
         public Long planId;
         //    private Long fixedPlanId;
+
+        @JsonDeserialize(using = LocalTimeDeserializer.class)
         public LocalTime startTime;
+
+        @JsonDeserialize(using = LocalTimeDeserializer.class)
         public LocalTime endTime;
+
         public String content;
         public boolean isFixed;
-        public int priority;
+        public PlanType planType;
 
         public static  TimeTableResponse from(FixedPlan fixedPlan) {
             return TimeTableResponse.builder()
@@ -43,7 +51,6 @@ public class TimeTableResponseDto {
                     .endTime(fixedPlan.getEndTime())
                     .content(fixedPlan.getContent())
                     .isFixed(true)
-                    .priority(0)
                     .build();
 
         }
@@ -55,7 +62,7 @@ public class TimeTableResponseDto {
                     .endTime(timeTable.getEndTime())
                     .content(timeTable.getContent())
                     .isFixed(timeTable.isFixed())
-                    .priority(timeTable.getPriority())
+                    .planType(timeTable.getPlanType())
                     .build();
         }
     }
