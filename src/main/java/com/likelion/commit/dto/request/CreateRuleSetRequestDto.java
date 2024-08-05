@@ -11,14 +11,14 @@ import lombok.NoArgsConstructor;
 @Getter
 public class CreateRuleSetRequestDto {
 
-    public String WLBalance;
+    public String wlBalance;
     public String sleepTime;
     public String exerciseTime;
     public String detail;
 
     public RuleSet toEntity(){
         return RuleSet.builder()
-                .WLBalance(WLBalance)
+                .wlBalance(wlBalance)
                 .sleepTime(sleepTime)
                 .exerciseTime(exerciseTime)
                 .detail(detail)

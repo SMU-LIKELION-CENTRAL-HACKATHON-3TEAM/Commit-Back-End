@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @Getter
 public class RuleSetResponseDto {
-    public String WLBalance;
+    public String wlBalance;
     public String sleepTime;
     public String exerciseTime;
     public String detail;
 
     public static RuleSetResponseDto from(RuleSet ruleSet){
         return RuleSetResponseDto.builder()
-                .WLBalance(ruleSet.getWLBalance())
+                .wlBalance(ruleSet.getWlBalance())
                 .sleepTime(ruleSet.getSleepTime())
                 .exerciseTime(ruleSet.getExerciseTime())
                 .detail(ruleSet.getDetail())

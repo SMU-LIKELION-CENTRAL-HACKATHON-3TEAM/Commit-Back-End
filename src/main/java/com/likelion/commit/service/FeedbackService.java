@@ -110,7 +110,7 @@ public class FeedbackService {
         StringBuilder sb = new StringBuilder();
         sb.append("사용자의 일정 규칙을 알려드리겠습니다.");
         sb.append("워크 & 라이프 밸런스는 ");
-        sb.append(ruleSet.getWLBalance()).append("이고, ");
+        sb.append(ruleSet.getWlBalance()).append("이고, ");
         sb.append("하루 목표 수면시간은");
         sb.append(ruleSet.getSleepTime()).append("시간이고, ");
         sb.append("하루 목표 운동시간은");

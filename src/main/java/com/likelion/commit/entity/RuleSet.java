@@ -17,7 +17,7 @@ public class RuleSet {
     private Long id;
 
     @Column
-    private String WLBalance;
+    private String wlBalance;
 
     @Column
     private String sleepTime;
@@ -34,7 +34,7 @@ public class RuleSet {
 
 
     public void update(UpdateRuleSetRequestDto updateRuleSetRequestDto){
-        WLBalance = updateRuleSetRequestDto.getWLBalance();
+        wlBalance = updateRuleSetRequestDto.getWlBalance();
         sleepTime = updateRuleSetRequestDto.getSleepTime();
         exerciseTime = updateRuleSetRequestDto.getExerciseTime();
         detail = updateRuleSetRequestDto.getDetail();
