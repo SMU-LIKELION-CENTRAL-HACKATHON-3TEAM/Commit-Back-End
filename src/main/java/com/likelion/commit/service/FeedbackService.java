@@ -7,9 +7,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.likelion.commit.dto.response.AnalysisResult;
 import com.likelion.commit.dto.response.FeedbackResponseDto;
 import com.likelion.commit.dto.response.TimeTableResponseDto;
+import com.likelion.commit.entity.RuleSet;
 import com.likelion.commit.entity.TimeTable;
 import com.likelion.commit.gloabal.exception.CustomException;
 import com.likelion.commit.gloabal.response.ErrorCode;
+import com.likelion.commit.repository.RuleSetRepository;
 import com.likelion.commit.repository.TimeTableRepository;
 import com.likelion.commit.repository.UserRepository;
 import com.likelion.commit.util.GPTUtil;
@@ -29,6 +31,7 @@ public class FeedbackService {
 
     private final UserRepository userRepository;
     private final TimeTableRepository timeTableRepository;
+    private final RuleSetRepository ruleSetRepository;
     private final GPTUtil gptUtil;
 
     public FeedbackResponseDto createFeedback(String email, LocalDate localDate) {
@@ -36,6 +39,10 @@ public class FeedbackService {
         Long userId = userRepository.findByEmail(email).orElseThrow(
                 () -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED)
         ).getId();
+
+        RuleSet ruleSet = ruleSetRepository.findByUser_Id(userId).orElseThrow(
+                () -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED)
+        );
 
         //어제 타임테이블 가져오기
         LocalDate yesterday = localDate.minusDays(1);//생성 기준으로 하루
@@ -46,7 +53,7 @@ public class FeedbackService {
                 = yesterdayTimeTables.stream().map(TimeTableResponseDto.TimeTableResponse::from).toList();
 
         //추천 생성
-        String prompt = generatePrompt(yesterdayTimeTables);
+        String prompt = generatePrompt(yesterdayTimeTables, ruleSet);
         log.info("prompt ---> {}", prompt);
         String result = gptUtil.generateMessage(getAssistant(), prompt);
         AnalysisResult analysisResult = null;
@@ -99,8 +106,17 @@ public class FeedbackService {
                 "각 필드에 대한 분석은 간결하게 작성하고, 추천 일정은 최소 3개 이상 포함하세요. 모든 시간은 HH:mm 형식을 사용하세요. ";
     }
 
-    private String generatePrompt(List<TimeTable> timeTables) {
+    private String generatePrompt(List<TimeTable> timeTables, RuleSet ruleSet) {
         StringBuilder sb = new StringBuilder();
+        sb.append("사용자의 일정 규칙을 알려드리겠습니다.");
+        sb.append("워크 & 라이프 밸런스는 ");
+        sb.append(ruleSet.getWLBalance()).append("이고, ");
+        sb.append("하루 목표 수면시간은");
+        sb.append(ruleSet.getSleepTime()).append("시간이고, ");
+        sb.append("하루 목표 운동시간은");
+        sb.append(ruleSet.getExerciseTime()).append("시간이고, ");
+        sb.append("그 외 세부사항은").append("이야.");
+
         sb.append("어제 일정은 ");
         timeTables.forEach(timeTable -> {
             sb.append(timeTable.getStartTime());
@@ -108,7 +124,7 @@ public class FeedbackService {
             sb.append(timeTable.getEndTime());
             sb.append(" 까지");
             sb.append(timeTable.getContent());
-            sb.append("를 했어. ");
+            sb.append("를 했습니다.");
         }
         );
         return sb.toString();
