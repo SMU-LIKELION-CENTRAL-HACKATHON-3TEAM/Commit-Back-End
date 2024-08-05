@@ -49,7 +49,7 @@ public class KakaoLoginController {
         JwtDto jwtDto = kakaoService.registerUserFromKakao(userInfo);
 
         MultiValueMap<String, String> headers = new HttpHeaders();
-        headers.add("Location", "http://localhost:3000?" +
+        headers.add("Location", "http://localhost:3000/auth?" +
                 "access=" + jwtDto.accessToken +
                 "&refresh=" + jwtDto.refreshToken);
 
