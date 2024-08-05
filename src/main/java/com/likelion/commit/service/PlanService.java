@@ -20,6 +20,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -109,11 +110,14 @@ public class PlanService {
 
 
         if (plan.getUser().getEmail().equals(user.getEmail())) {
+
+
             // 상태가 null이면 COMPLETE로 설정
             if (plan.getStatus() == null) {
                 plan.setStatus(PlanStatus.COMPLETE);
+            } else if (plan.getStatus().equals(PlanStatus.COMPLETE)){
+                throw new CustomException(ErrorCode.BAD_REQUEST_400);
             }
-
             if (plan.getStatus().equals(PlanStatus.DELAYED)) {
                 planRepository.deleteById(plan.getChildPlan());
                 plan.setDelayToDefault();
@@ -121,8 +125,6 @@ public class PlanService {
             plan.setTime(planTimeRequestDto.startTime, planTimeRequestDto.endTime);
             plan.setStatus(PlanStatus.COMPLETE);
             plan.setComplete(true);
-
-            //TODO : 이미 TimeTable에 들어가 있는 경우 -> Exception
 
             timeTableRepository.save(TimeTable.builder()
                     .planId(plan.getId())
@@ -147,6 +149,10 @@ public class PlanService {
             if (plan.getStatus() == null) {
                 plan.setStatus(PlanStatus.CANCELED);
             }
+            // 완료된 일정을 취소할 경우
+            if(plan.getStatus().equals(PlanStatus.COMPLETE)){
+                timeTableRepository.deleteByPlanIdAndIsFixedFalse(planId);
+            }
             if (plan.getStatus().equals(PlanStatus.DELAYED)) {
                 planRepository.deleteById(plan.getChildPlan());
                 plan.setDelayToDefault();
@@ -164,6 +170,10 @@ public class PlanService {
         Plan plan = planRepository.findById(planId).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
         if (plan.getUser().getEmail().equals(user.getEmail())) {
+            // 완료된 일정을 미룰 경우
+            if(plan.getStatus().equals(PlanStatus.COMPLETE)){
+                timeTableRepository.deleteByPlanIdAndIsFixedFalse(planId);
+            }
             plan.setStatus(PlanStatus.DELAYED);
             plan.setDelayed(true);
             plan.setComplete(false);
