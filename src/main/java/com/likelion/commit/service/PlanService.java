@@ -170,13 +170,22 @@ public class PlanService {
         Plan plan = planRepository.findById(planId).orElseThrow(() -> new CustomException(ErrorCode.NO_PLAN_DATA_REGISTERED));
 
         if (plan.getUser().getEmail().equals(user.getEmail())) {
-            // 완료된 일정을 미룰 경우
-            if(plan.getStatus().equals(PlanStatus.COMPLETE)){
+            // 일정의 상태가 없을경우
+            if(plan.getStatus()==null){
+                plan.setStatus(PlanStatus.DELAYED);
+                // 완료된 일정을 미룰경우
+            } else if (plan.getStatus().equals(PlanStatus.COMPLETE)) {
                 timeTableRepository.deleteByPlanIdAndIsFixedFalse(planId);
+                // 미룬 일정을 또 미룰경우
+            }else if(plan.getStatus().equals(PlanStatus.DELAYED)){
+                planRepository.deleteById(plan.getChildPlan());
+                plan.setDelayToDefault();
             }
             plan.setStatus(PlanStatus.DELAYED);
             plan.setDelayed(true);
             plan.setComplete(false);
+            plan.setCalendar(false);
+
 
             Plan childPlan = Plan.builder()
                     .date(delayPlanRequestDto.getDelayedDate())
@@ -184,6 +193,7 @@ public class PlanService {
                     .priority(plan.getPriority())
                     .type(plan.getType())
                     .user(user)
+                    .isCalendar(true)
                     .build();
 
             planRepository.save(childPlan);
@@ -327,6 +337,7 @@ public class PlanService {
                     .priority(1)     // A로 고정
                     .type(calendarPlanRequestDto.getType())
                     .date(startDate)
+                    .isCalendar(true)  // 캘린더화면에서 생성한 Plan
                     .build();
 
             plans.add(plan);
@@ -377,7 +388,7 @@ public class PlanService {
         LocalDate startDate = yearMonth.atDay(1); // 해당 월의 첫날
         LocalDate endDate = yearMonth.atEndOfMonth(); // 해당 월의 마지막 날
 
-        List<Plan> plans = planRepository.findByUser_EmailAndDateBetween(email, startDate, endDate);
+        List<Plan> plans = planRepository.findByUserEmailAndDateBetweenAndIsCalendarTrue(email, startDate, endDate);
 
         return PlanResponseDto.from(plans);
     }

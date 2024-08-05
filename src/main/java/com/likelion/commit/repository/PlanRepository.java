@@ -19,5 +19,5 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
     List<Plan> findByDateAndUser_Email(LocalDate date, String email);
     @Query("SELECT p FROM Plan p WHERE p.date > :currentDate AND p.user.email = :email ORDER BY p.date ASC")
     List<Plan> findUpcomingPlans(@Param("currentDate") LocalDate currentDate, @Param("email") String email);
-    List<Plan> findByUser_EmailAndDateBetween(String email, LocalDate startDate, LocalDate endDate);
+    List<Plan> findByUserEmailAndDateBetweenAndIsCalendarTrue(String email, LocalDate startDate, LocalDate endDate);
 }

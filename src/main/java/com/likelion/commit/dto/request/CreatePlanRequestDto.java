@@ -26,6 +26,7 @@ public class CreatePlanRequestDto {
                 .content(content)
                 .priority(priority)
                 .type(type)
+                .isCalendar(false)
                 .build();
     }
 }

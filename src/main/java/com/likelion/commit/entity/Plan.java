@@ -58,6 +58,7 @@ public class Plan {
     @JoinColumn(name = "userId")
     private User user;
 
+    private boolean isCalendar;
 
     public void update(UpdatePlanRequestDto updatePlanRequestDto){
         this.content = updatePlanRequestDto.getContent();
@@ -94,4 +95,5 @@ public class Plan {
     public void setChildPlan(Long id) {
         childPlan = id;
     }
+    public void setCalendar(boolean b){isCalendar = b;}
 }
