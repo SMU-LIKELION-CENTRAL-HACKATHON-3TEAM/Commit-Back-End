@@ -21,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
@@ -122,21 +123,21 @@ public class PlanController {
 
     @Operation(method = "GET",
             summary = "날짜별 일정 조회",
-            description = "날짜별 일정을 조회합니다. header에 accessToken과 body에는 PlanDateRequestDto형태로 담아 요청하면 List<PlanResponseDto> 형태로 반환합니다.")
+            description = "날짜별 일정을 조회합니다. header에 accessToken과 파라미테어 date를 담아 요청하면 List<PlanResponseDto> 형태로 반환합니다.")
     @GetMapping("/date")
-    public ApiResponse<List<PlanResponseDto>> getPlan(@AuthenticationPrincipal UserDetails userDetails, @RequestBody PlanDateRequestDto planDateRequestDto) {
-
-        List<PlanResponseDto> plans = planService.getPlans(userDetails.getUsername(), planDateRequestDto);
+    public ApiResponse<List<PlanResponseDto>> getPlan(@AuthenticationPrincipal UserDetails userDetails, @RequestParam("date") String date) {
+        LocalDate d = LocalDate.parse(date);
+        List<PlanResponseDto> plans = planService.getPlans(userDetails.getUsername(), d);
         return ApiResponse.onSuccess(HttpStatus.OK, "일정 조회에 성공했습니다", plans);
     }
 
     @Operation(method = "GET",
             summary = "날짜별 타임 테이블 조회",
-            description = "날짜별 타임 테이블을 조회합니다. header에 accessToken과 body에는 PlanDateRequestDto형태로 담아 요청합니다. 날짜별 일정 중 완료된 것들과 고정일정들이 TimeTableResponseDto 형태로 반환됩니다.")
+            description = "날짜별 타임 테이블을 조회합니다. header에 accessToken과 파라미테어 date를 담아 요청합니다. 날짜별 일정 중 완료된 것들과 고정일정들이 TimeTableResponseDto 형태로 반환됩니다.")
     @GetMapping("/timetable")
-    public ApiResponse<TimeTableResponseDto> getTimeTable(@AuthenticationPrincipal UserDetails userDetails, @RequestBody PlanDateRequestDto planDateRequestDto) {
-
-        TimeTableResponseDto timeTable = planService.getTimeTable(userDetails.getUsername(), planDateRequestDto);
+    public ApiResponse<TimeTableResponseDto> getTimeTable(@AuthenticationPrincipal UserDetails userDetails, @RequestParam("date") String date) {
+        LocalDate d = LocalDate.parse(date);
+        TimeTableResponseDto timeTable = planService.getTimeTable(userDetails.getUsername(), d);
         return ApiResponse.onSuccess(HttpStatus.OK, "타임테이블 조회에 성공했습니다",timeTable);
     }
 
@@ -178,22 +179,22 @@ public class PlanController {
 
     @Operation(method = "GET",
             summary = "이날의 기록사항 조회",
-            description = "이날의 기록사항을 조회합니다. header에 accessToken과 body에 FinishRequestDto형태로 담아 요청하면 DiaryResponseDto형태로 반환합니다.")
+            description = "이날의 기록사항을 조회합니다. header에 accessToken과 파라미터에 date를 담아 요청하면 DiaryResponseDto형태로 반환합니다.")
     @GetMapping("/diary")
     public ApiResponse<DiaryResponseDto> getDiary(@AuthenticationPrincipal UserDetails userDetails,
-                                                  @RequestBody DiaryDateRequestDto diaryDateRequestDto){
-
-        DiaryResponseDto diaryResponseDto = diaryService.getDiary(userDetails.getUsername(), diaryDateRequestDto);
+                                                  @RequestParam("date") String date){
+        LocalDate d = LocalDate.parse(date);
+        DiaryResponseDto diaryResponseDto = diaryService.getDiary(userDetails.getUsername(), d);
         return ApiResponse.onSuccess(HttpStatus.OK, "기록 사항 조회에 성공했습니다.", diaryResponseDto);
     }
 
     @Operation(method = "GET",
             summary = "월별 일정 조회",
-            description = "캘린더 화면에서 월별 일정들을 조회합니다. header에 accessToken과 body에 MonthPlanRequestDto형태로 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
+            description = "캘린더 화면에서 월별 일정들을 조회합니다. header에 accessToken과 파라미테어 yearMonth를 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
     @GetMapping("/month")
-    public ApiResponse<List<PlanResponseDto>> getMonthlyPlans(@AuthenticationPrincipal UserDetails userDetails, @RequestBody MonthPlanRequestDto monthPlanRequestDto) {
+    public ApiResponse<List<PlanResponseDto>> getMonthlyPlans(@AuthenticationPrincipal UserDetails userDetails, @RequestParam("yearMonth") String yearMonth) {
 
-        YearMonth ym = YearMonth.parse(monthPlanRequestDto.getYearMonth());
+        YearMonth ym = YearMonth.parse(yearMonth);
         List<PlanResponseDto> planResponseDtos = planService.getMonthlyPlans(userDetails.getUsername(), ym);
         return ApiResponse.onSuccess(HttpStatus.OK, "월별 일정 조회에 성공했습니다.", planResponseDtos);
     }

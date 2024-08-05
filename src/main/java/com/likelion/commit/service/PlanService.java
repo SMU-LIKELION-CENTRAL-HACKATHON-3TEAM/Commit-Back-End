@@ -221,16 +221,15 @@ public class PlanService {
         }
     }
 
-    public List<PlanResponseDto> getPlans(String email, PlanDateRequestDto planDateRequestDto) {
+    public List<PlanResponseDto> getPlans(String email, LocalDate date) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
-        List<Plan> plans = planRepository.findByDateAndUser_Email(planDateRequestDto.getDate(), email);
+        List<Plan> plans = planRepository.findByDateAndUser_Email(date, email);
         return PlanResponseDto.from(plans);
     }
 
 
     @Transactional
-    public TimeTableResponseDto getTimeTable(String email, PlanDateRequestDto planDateRequestDto) {
-        LocalDate date = planDateRequestDto.getDate();
+    public TimeTableResponseDto getTimeTable(String email, LocalDate date) {
         boolean isWeekend = (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY);
         // 사용자 조회
         User user = userRepository.findByEmail(email)
