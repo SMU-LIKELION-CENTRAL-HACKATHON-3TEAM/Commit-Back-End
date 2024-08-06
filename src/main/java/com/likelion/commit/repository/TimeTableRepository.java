@@ -19,4 +19,13 @@ public interface TimeTableRepository extends JpaRepository<TimeTable, Long> {
     @Modifying
     @Query("SELECT t FROM TimeTable t WHERE t.planId = :planId AND t.isFixed = false")
     Optional<TimeTable> findByPlanIdAndIsFixedFalse(@Param("planId") Long planId);
+
+    @Query("SELECT t FROM TimeTable t " +
+            "WHERE t.user.id = :userId " +
+            "AND t.date BETWEEN :startDate AND :endDate " +
+            "ORDER BY t.date ASC, t.startTime ASC")
+    List<TimeTable> findWeekScheduleByUserIdAndStartDate(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }
