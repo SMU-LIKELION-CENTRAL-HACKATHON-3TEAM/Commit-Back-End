@@ -22,6 +22,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.Year;
 import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
@@ -184,13 +185,12 @@ public class PlanController {
     }
 
     @Operation(method = "GET",
-            summary = "월별 일정 조회",
-            description = "캘린더 화면에서 월별 일정들을 조회합니다. header에 accessToken과 파라미테어 yearMonth를 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
-    @GetMapping("/month")
-    public ApiResponse<List<PlanResponseDto>> getMonthlyPlans(@AuthenticationPrincipal UserDetails userDetails, @RequestParam("yearMonth") String yearMonth) {
+            summary = "캘린더 일정 조회",
+            description = "캘린더 화면에서 월별 일정들을 조회합니다. header에 accessToken을 담아 요청하면 List<PlanResponseDto>형태로 반환합니다.")
+    @GetMapping("/calendar")
+    public ApiResponse<List<PlanResponseDto>> getCalendarPlans(@AuthenticationPrincipal UserDetails userDetails) {
 
-        YearMonth ym = YearMonth.parse(yearMonth);
-        List<PlanResponseDto> planResponseDtos = planService.getMonthlyPlans(userDetails.getUsername(), ym);
+        List<PlanResponseDto> planResponseDtos = planService.getCalendarPlans(userDetails.getUsername());
         return ApiResponse.onSuccess(HttpStatus.OK, "월별 일정 조회에 성공했습니다.", planResponseDtos);
     }
 

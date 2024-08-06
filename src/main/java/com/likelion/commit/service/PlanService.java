@@ -13,14 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.YearMonth;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -377,12 +372,10 @@ public class PlanService {
     }
 
 
-    public List<PlanResponseDto> getMonthlyPlans(String email, YearMonth yearMonth) {
+    public List<PlanResponseDto> getCalendarPlans(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
-        LocalDate startDate = yearMonth.atDay(1); // 해당 월의 첫날
-        LocalDate endDate = yearMonth.atEndOfMonth(); // 해당 월의 마지막 날
 
-        List<Plan> plans = planRepository.findByUserEmailAndDateBetweenAndIsCalendarTrue(email, startDate, endDate);
+        List<Plan> plans = planRepository.findByUserEmailIsCalendarTrue(email);
 
         return PlanResponseDto.from(plans);
     }
