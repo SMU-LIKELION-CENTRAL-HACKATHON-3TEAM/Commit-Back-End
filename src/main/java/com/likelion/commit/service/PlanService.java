@@ -350,7 +350,7 @@ public class PlanService {
     }
 
     @Transactional
-    public Long finish(String email, FinishRequestDto finishRequestDto){
+    public void finish(String email, FinishRequestDto finishRequestDto){
         User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.NO_USER_DATA_REGISTERED));
         LocalDate date = finishRequestDto.getDate();
         boolean isWeekend = (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY);
@@ -374,11 +374,6 @@ public class PlanService {
         }
 
         timeTableRepository.saveAll(timeTables);
-        Diary diary = finishRequestDto.toEntity();
-        diary.setUser(user);
-        diaryRepository.save(diary);
-
-        return diary.getId();
     }
 
 

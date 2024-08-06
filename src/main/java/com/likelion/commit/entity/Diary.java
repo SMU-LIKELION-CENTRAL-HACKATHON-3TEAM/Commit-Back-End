@@ -1,6 +1,7 @@
 package com.likelion.commit.entity;
 
 
+import com.likelion.commit.dto.request.UpdateDiaryRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -30,5 +31,9 @@ public class Diary {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public void update(UpdateDiaryRequestDto updateDiaryRequestDto){
+        this.content = updateDiaryRequestDto.getContent();
     }
 }

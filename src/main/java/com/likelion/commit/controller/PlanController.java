@@ -164,17 +164,12 @@ public class PlanController {
 
     @Operation(method = "POST",
             summary = "오늘 하루 마무리 하기",
-            description = "오늘 하루 마무리화면에서 이날의 기록사항과 해당일의 타임테이블을 저장합니다. header에 accessToken과 body에 FinishRequestDto형태로 담아 요청합니다. 이날의 기록사항 id를 반환합니다.")
+            description = "오늘 하루 마무리화면에서 이날의 기록사항과 해당일의 타임테이블을 저장합니다. header에 accessToken과 body에 FinishRequestDto형태로 담아 요청합니다.")
     @PostMapping("finish")
-    public ApiResponse<Map<String, Long>> finish(@AuthenticationPrincipal UserDetails userDetails,
+    public ApiResponse<String> finish(@AuthenticationPrincipal UserDetails userDetails,
                                                  @RequestBody FinishRequestDto finishRequestDto) {
-        Long diaryId = planService.finish(userDetails.getUsername(), finishRequestDto);
-
-        // 결과를 Map으로 래핑
-        Map<String, Long> result = new HashMap<>();
-        result.put("diaryId", diaryId);
-
-        return ApiResponse.onSuccess(HttpStatus.CREATED, "오늘 하루 마무리하기에 성공했습니다.",result);
+         planService.finish(userDetails.getUsername(), finishRequestDto);
+        return ApiResponse.onSuccess(HttpStatus.OK, "오늘 하루 마무리하기에 성공했습니다.");
     }
 
     @Operation(method = "GET",
@@ -199,6 +194,31 @@ public class PlanController {
         return ApiResponse.onSuccess(HttpStatus.OK, "월별 일정 조회에 성공했습니다.", planResponseDtos);
     }
 
+
+    @Operation(method = "POST",
+            summary = "이날의 기록사항 저장",
+            description = "이날의 기록사항을 저장합니다. header에 accessToken과 body에 CreateDiaryRequestDto형태로 담아 요청하면 diaryId를 반환합니다.")
+    @PostMapping("/diary")
+    public ApiResponse<Map<String, Long>> createDiary(@AuthenticationPrincipal UserDetails userDetails,
+                                                      @RequestBody CreateDiaryRequestDto createDiaryRequestDto){
+        Long diaryId = diaryService.createDiary(userDetails.getUsername(), createDiaryRequestDto);
+
+        // 결과 데이터 생성
+        Map<String, Long> result = new HashMap<>();
+        result.put("diaryId", diaryId);
+
+        return ApiResponse.onSuccess(HttpStatus.CREATED, "기록사항 저장에 성공했습니다.", result);
+    }
+
+    @Operation(method = "PUT",
+            summary = "이날의 기록사항 수정",
+            description = "이날의 기록사항을 수정합니다. header에 accessToken과 body에 UpdateDiaryRequestDto형태로 담아 요청합니다.")
+    @PutMapping("/diary")
+    public ApiResponse<String> updateDiary(@AuthenticationPrincipal UserDetails userDetails,
+                                           @RequestBody UpdateDiaryRequestDto updateDiaryRequestDto){
+        diaryService.updateDiary(userDetails.getUsername(), updateDiaryRequestDto);
+        return ApiResponse.onSuccess(HttpStatus.OK, "기록사항 수정에 성공했습니다.");
+    }
 
 }
 

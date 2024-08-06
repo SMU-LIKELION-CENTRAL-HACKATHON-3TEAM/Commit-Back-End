@@ -8,15 +8,17 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
-@NoArgsConstructor
-public class FinishRequestDto {
+public class CreateDiaryRequestDto {
     public LocalDate date;
+    public String content;
 
     public Diary toEntity(){
         return Diary.builder()
                 .date(date)
+                .content(content)
                 .build();
     }
 }
